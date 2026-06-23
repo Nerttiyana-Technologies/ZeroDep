@@ -1,18 +1,13 @@
-<p align="center">
-  <img src="assets/zerodep-header.png" alt="ZeroDep — Zero External Dependencies. Pure PDF Processing." width="100%">
-</p>
+![ZeroDep — Zero External Dependencies. Pure PDF Processing.](https://raw.githubusercontent.com/Nerttiyana-Technologies/ZeroDep/main/assets/zerodep-header.png)
 
-<p align="center">
-  <strong>Zero External Dependencies. Pure PDF Processing.</strong><br>
-  A 100% dependency-free .NET engine for PDF structural analysis.
-</p>
+**Zero External Dependencies. Pure PDF Processing.**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/.NET-netstandard2.0%20%7C%20net8.0%20%7C%20net10.0-512BD4" alt="Target frameworks">
-  <img src="https://img.shields.io/badge/dependencies-0-1ED760" alt="Zero dependencies">
-  <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/PDF-ISO%2032000--2-22D3EE" alt="ISO 32000-2">
-</p>
+A 100% dependency-free .NET engine for PDF structural analysis.
+
+![Target frameworks](https://img.shields.io/badge/.NET-netstandard2.0%20%7C%20net8.0%20%7C%20net10.0-512BD4)
+![Zero dependencies](https://img.shields.io/badge/dependencies-0-1ED760)
+![License](https://img.shields.io/badge/license-Apache--2.0-blue)
+![ISO 32000-2](https://img.shields.io/badge/PDF-ISO%2032000--2-22D3EE)
 
 ---
 
@@ -275,4 +270,4 @@ submitting; all targets must build clean (warnings are treated as errors).
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE).
+Licensed under the [Apache License 2.0](https://github.com/Nerttiyana-Technologies/ZeroDep/blob/main/LICENSE).
