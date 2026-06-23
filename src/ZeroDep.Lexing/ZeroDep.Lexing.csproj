@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Lexing</RootNamespace>
+    <AssemblyName>ZeroDep.Lexing</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.IO\ZeroDep.IO.csproj" />
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Lexing.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Objects" />
+    <InternalsVisibleTo Include="ZeroDep.Content" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Abstractions</RootNamespace>
+    <AssemblyName>ZeroDep.Abstractions</AssemblyName>
+  </PropertyGroup>
+</Project>
