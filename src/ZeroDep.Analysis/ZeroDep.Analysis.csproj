@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Analysis</RootNamespace>
+    <AssemblyName>ZeroDep.Analysis</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Content\ZeroDep.Content.csproj" />
+    <ProjectReference Include="..\ZeroDep.Model\ZeroDep.Model.csproj" />
+    <ProjectReference Include="..\ZeroDep.Objects\ZeroDep.Objects.csproj" />
+    <ProjectReference Include="..\ZeroDep.Validation\ZeroDep.Validation.csproj" />
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Analysis.Tests" />
+    <InternalsVisibleTo Include="ZeroDep" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,48 @@
+<Project>
+
+  <!-- Shared build settings for every ZeroDep project. -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Every library project is packable; test projects and non-shipping projects override. -->
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- Shared NuGet package metadata (consumed by packable projects at M8). -->
+  <PropertyGroup>
+    <Authors>Nerttiyana Technologies</Authors>
+    <Company>Nerttiyana Technologies</Company>
+    <Product>ZeroDep</Product>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Nerttiyana-Technologies/ZeroDep</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Nerttiyana-Technologies/ZeroDep</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>pdf;analysis;dpi;ocr;acroform;zero-dependency;netstandard</PackageTags>
+    <Description>A 100% dependency-free .NET engine for PDF structural analysis: DPI metrics, text and OCR-layer extraction, AcroForm mapping, standard-handler decryption, and typed JSON output.</Description>
+    <PackageReleaseNotes>See CHANGELOG.md for release notes.</PackageReleaseNotes>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <!-- Embed the README in every package. -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <!-- Multi-target polyfill so records/init work on netstandard2.0. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <Compile Include="$(MSBuildThisFileDirectory)build/IsExternalInit.cs" Link="Polyfills/IsExternalInit.cs" />
+  </ItemGroup>
+
+</Project>

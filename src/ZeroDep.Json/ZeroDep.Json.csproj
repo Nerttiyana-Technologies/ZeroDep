@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Json</RootNamespace>
+    <AssemblyName>ZeroDep.Json</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Json.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Batch" />
+  </ItemGroup>
+</Project>

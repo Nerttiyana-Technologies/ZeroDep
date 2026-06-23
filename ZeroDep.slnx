@@ -1,0 +1,39 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="global.json" />
+    <File Path="Directory.Build.props" />
+    <File Path="README.md" />
+    <File Path=".github/workflows/ci.yml" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ZeroDep/ZeroDep.csproj" />
+    <Project Path="src/ZeroDep.Cli/ZeroDep.Cli.csproj" />
+    <Project Path="src/ZeroDep.Abstractions/ZeroDep.Abstractions.csproj" />
+    <Project Path="src/ZeroDep.IO/ZeroDep.IO.csproj" />
+    <Project Path="src/ZeroDep.Lexing/ZeroDep.Lexing.csproj" />
+    <Project Path="src/ZeroDep.Objects/ZeroDep.Objects.csproj" />
+    <Project Path="src/ZeroDep.Validation/ZeroDep.Validation.csproj" />
+    <Project Path="src/ZeroDep.Security/ZeroDep.Security.csproj" />
+    <Project Path="src/ZeroDep.Filters/ZeroDep.Filters.csproj" />
+    <Project Path="src/ZeroDep.Model/ZeroDep.Model.csproj" />
+    <Project Path="src/ZeroDep.Content/ZeroDep.Content.csproj" />
+    <Project Path="src/ZeroDep.Analysis/ZeroDep.Analysis.csproj" />
+    <Project Path="src/ZeroDep.Json/ZeroDep.Json.csproj" />
+    <Project Path="src/ZeroDep.Batch/ZeroDep.Batch.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ZeroDep.Tests/ZeroDep.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Abstractions.Tests/ZeroDep.Abstractions.Tests.csproj" />
+    <Project Path="tests/ZeroDep.IO.Tests/ZeroDep.IO.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Lexing.Tests/ZeroDep.Lexing.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Objects.Tests/ZeroDep.Objects.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Validation.Tests/ZeroDep.Validation.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Security.Tests/ZeroDep.Security.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Filters.Tests/ZeroDep.Filters.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Model.Tests/ZeroDep.Model.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Content.Tests/ZeroDep.Content.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Analysis.Tests/ZeroDep.Analysis.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Json.Tests/ZeroDep.Json.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Batch.Tests/ZeroDep.Batch.Tests.csproj" />
+  </Folder>
+</Solution>

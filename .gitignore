@@ -427,3 +427,36 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ──────────────────────────────────────────────────────────────
+# Internal / private — NOT for the public repository
+# ──────────────────────────────────────────────────────────────
+# Design records (ADRs), planning notes, and task lists are internal.
+/private/
+docs/adr/
+docs/internal/
+tasks/
+TASKS.md
+*.tasks.md
+ADR-*.md
+
+# Private verification/test corpus (the 10K real PDFs) and per-file
+# verification output must never be committed (legal/PII).
+/corpus/
+/verification-output/
+*.corpus/
+
+# Local sample PDFs / private corpus (now kept under private/, not committed)
+/data/
+/private/data/
+
+# ──────────────────────────────────────────────────────────────
+# OS / IDE / local scratch — never committed
+# ──────────────────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+.idea/
+*.DotSettings.user
+sf1449.json
+nupkgs/
+/artifacts/

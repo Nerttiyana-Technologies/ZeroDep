@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Content</RootNamespace>
+    <AssemblyName>ZeroDep.Content</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Objects\ZeroDep.Objects.csproj" />
+    <ProjectReference Include="..\ZeroDep.Lexing\ZeroDep.Lexing.csproj" />
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Content.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Analysis" />
+  </ItemGroup>
+</Project>

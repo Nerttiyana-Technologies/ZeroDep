@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Security</RootNamespace>
+    <AssemblyName>ZeroDep.Security</AssemblyName>
+    <!-- MD5 and RC4 are mandated by the PDF standard security handler (ISO 32000-2 §7.6.4);
+         these analyzers flag them as weak crypto, which is expected and unavoidable here. -->
+    <NoWarn>$(NoWarn);CA5350;CA5351;CA5358;CA5359;CA1850;SYSLIB0021</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Security.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Objects" />
+  </ItemGroup>
+</Project>

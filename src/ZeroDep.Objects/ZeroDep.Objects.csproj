@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Objects</RootNamespace>
+    <AssemblyName>ZeroDep.Objects</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Lexing\ZeroDep.Lexing.csproj" />
+    <ProjectReference Include="..\ZeroDep.IO\ZeroDep.IO.csproj" />
+    <ProjectReference Include="..\ZeroDep.Filters\ZeroDep.Filters.csproj" />
+    <ProjectReference Include="..\ZeroDep.Security\ZeroDep.Security.csproj" />
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Objects.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Model" />
+    <InternalsVisibleTo Include="ZeroDep.Analysis" />
+  </ItemGroup>
+</Project>

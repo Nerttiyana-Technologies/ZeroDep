@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <RootNamespace>ZeroDep.Cli</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Ship the CLI as a .NET global/local tool: `dotnet tool install -g ZeroDep.Tool` → `zerodep`. -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>zerodep</ToolCommandName>
+    <PackageId>ZeroDep.Tool</PackageId>
+    <Description>Command-line front-end for ZeroDep: single-file PDF structural analysis and a resumable, parallel batch corpus runner.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep\ZeroDep.csproj" />
+    <ProjectReference Include="..\ZeroDep.Batch\ZeroDep.Batch.csproj" />
+  </ItemGroup>
+</Project>

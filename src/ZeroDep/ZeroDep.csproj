@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep</RootNamespace>
+    <AssemblyName>ZeroDep</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+    <ProjectReference Include="..\ZeroDep.IO\ZeroDep.IO.csproj" />
+    <ProjectReference Include="..\ZeroDep.Lexing\ZeroDep.Lexing.csproj" />
+    <ProjectReference Include="..\ZeroDep.Objects\ZeroDep.Objects.csproj" />
+    <ProjectReference Include="..\ZeroDep.Validation\ZeroDep.Validation.csproj" />
+    <ProjectReference Include="..\ZeroDep.Security\ZeroDep.Security.csproj" />
+    <ProjectReference Include="..\ZeroDep.Filters\ZeroDep.Filters.csproj" />
+    <ProjectReference Include="..\ZeroDep.Model\ZeroDep.Model.csproj" />
+    <ProjectReference Include="..\ZeroDep.Content\ZeroDep.Content.csproj" />
+    <ProjectReference Include="..\ZeroDep.Analysis\ZeroDep.Analysis.csproj" />
+    <ProjectReference Include="..\ZeroDep.Json\ZeroDep.Json.csproj" />
+  </ItemGroup>
+</Project>
