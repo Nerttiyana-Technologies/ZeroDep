@@ -21,6 +21,8 @@
     <Project Path="src/ZeroDep.Json/ZeroDep.Json.csproj" />
     <Project Path="src/ZeroDep.Batch/ZeroDep.Batch.csproj" />
     <Project Path="src/ZeroDep.Ocr/ZeroDep.Ocr.csproj" />
+    <Project Path="src/ZeroDep.Ocr.Tesseract/ZeroDep.Ocr.Tesseract.csproj" />
+    <Project Path="src/ZeroDep.Ocr.Paddle/ZeroDep.Ocr.Paddle.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZeroDep.Tests/ZeroDep.Tests.csproj" />

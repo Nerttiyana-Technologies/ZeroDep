@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Ocr.Tesseract</RootNamespace>
+    <AssemblyName>ZeroDep.Ocr.Tesseract</AssemblyName>
+    <!-- OCR engines are modern-only; drop netstandard2.0 for this adapter. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Description>Tesseract IOcrEngine adapter for ZeroDep.Ocr — drives the tesseract command-line program to recover text from scanned images. No managed or native package dependency; requires the tesseract executable on PATH.</Description>
+    <PackageTags>pdf;ocr;tesseract;zerodep</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Ocr\ZeroDep.Ocr.csproj" />
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <!--
+    No PackageReference: this adapter invokes the `tesseract` CLI as a subprocess rather than
+    binding libtesseract in-process. That keeps platform support equal to Tesseract's own
+    (incl. Apple-silicon macOS) and keeps the package free of bundled native binaries.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Ocr.Tesseract.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Ocr.Benchmark" />
+  </ItemGroup>
+</Project>
