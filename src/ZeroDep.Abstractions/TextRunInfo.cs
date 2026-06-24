@@ -24,6 +24,15 @@ public sealed class TextRunInfo
     /// <summary>The text rendering mode (Tr).</summary>
     public int RenderMode { get; init; }
 
-    /// <summary>True when drawn invisibly (Tr = 3) — the OCR/searchable layer.</summary>
+    /// <summary>True when drawn invisibly (Tr = 3) — the embedded OCR/searchable layer.</summary>
     public bool IsOcrLayer { get; init; }
+
+    /// <summary>The provenance of this run: embedded in the document, or recovered by OCR.</summary>
+    public TextSource Source { get; init; } = TextSource.Embedded;
+
+    /// <summary>
+    /// Recognition confidence (0–1) for <see cref="TextSource.OcrGenerated"/> runs; 1.0 for embedded
+    /// text. Lets consumers threshold OCR output rather than trusting it blindly.
+    /// </summary>
+    public double Confidence { get; init; } = 1.0;
 }

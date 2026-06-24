@@ -4,7 +4,29 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.1.0 — Unreleased
+## 1.2.0 — Unreleased
+
+### Added
+
+- **OCR-from-image (`ZeroDep.Ocr`).** A new opt-in, **dependency-free** package that recovers text
+  from scanned pages with no embedded text layer. It defines a pluggable `IOcrEngine` (bring your own
+  engine — Tesseract, PaddleOCR, a cloud API), decodes the page's image via the 1.1.0 JPEG decoder,
+  and folds recovered lines into the analysis as `OcrGenerated` runs with confidence — never silently
+  merged with embedded text. Public API: `IOcrEngine`, `DecodedImage`, `OcrOptions`, `OcrResult`,
+  `OcrLine`, `OcrImageConverter`, `OcrProcessor`.
+- **`PdfAnalyzer.ExtractImages`** — enumerate a document's embedded image XObjects (page, declared
+  size, filter, raw bytes) via the new public `PdfImageInfo`.
+- **`TextRunInfo.Source`** (`Embedded` | `OcrGenerated`) and **`TextRunInfo.Confidence`** — text
+  provenance, so OCR output is always distinguishable from embedded text. A page that gains OCR text
+  reclassifies `ScannedImageOnly` → `ScannedWithOcr` (OCR text is not counted as embedded text).
+
+### Notes
+
+- The OCR core ships with **no bundled engine** and adds no dependency to any ZeroDep package. A
+  reference engine adapter (Tesseract / PaddleOCR) will ship separately (1.2.x), gated on a measured
+  accuracy benchmark (CER/WER on a labeled ground-truth set).
+
+## 1.1.0
 
 ### Added
 

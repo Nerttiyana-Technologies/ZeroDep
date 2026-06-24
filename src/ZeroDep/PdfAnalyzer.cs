@@ -48,4 +48,10 @@ public static class PdfAnalyzer
     /// <param name="password">Password for an encrypted document (empty/default if null).</param>
     public static string ToJson(Stream stream, bool indent = false, int dpiThreshold = AnalyzerOptions.DefaultDpiThreshold, string? password = null)
         => DocumentJson.Write(DocumentAnalyzer.Analyze(stream, dpiThreshold, password), indent);
+
+    /// <summary>Enumerates the embedded image XObjects in a PDF, with their declared size, filter, and raw bytes.</summary>
+    /// <param name="stream">A readable PDF stream.</param>
+    /// <param name="password">Password for an encrypted document (empty/default if null).</param>
+    public static IReadOnlyList<PdfImageInfo> ExtractImages(Stream stream, string? password = null)
+        => ImageExtractor.Extract(stream, password);
 }

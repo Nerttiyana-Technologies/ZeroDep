@@ -75,6 +75,18 @@ public sealed class DocumentClassifierTests
     }
 
     [Fact]
+    public void ImageDominatedWithOcrGeneratedText_IsScannedWithOcr()
+    {
+        var analysis = new DocumentAnalysis
+        {
+            ImageAreaFraction = 0.95,
+            Images = new[] { new ImageDpiInfo { PageIndex = 0, EffectiveDpi = 150 } },
+            TextRuns = new[] { new TextRunInfo { Text = "ocr-recovered words", Source = TextSource.OcrGenerated, Confidence = 0.9 } },
+        };
+        Assert.Equal(DocumentCategory.ScannedWithOcr, DocumentClassifier.Classify(analysis, Thresholds));
+    }
+
+    [Fact]
     public void TextWithNegligibleImagesIsDigitalText()
     {
         var analysis = new DocumentAnalysis

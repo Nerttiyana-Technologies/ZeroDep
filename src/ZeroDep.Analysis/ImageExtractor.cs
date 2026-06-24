@@ -1,37 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using ZeroDep.Abstractions;
 using ZeroDep.Model;
 using ZeroDep.Objects;
 
 namespace ZeroDep.Analysis;
 
-/// <summary>An embedded image XObject: its declared dimensions, filter, and raw (encoded) bytes.</summary>
-internal sealed class EmbeddedImage
-{
-    public int PageIndex { get; init; }
-
-    public int DeclaredWidth { get; init; }
-
-    public int DeclaredHeight { get; init; }
-
-    public string? Filter { get; init; }
-
-    public byte[] RawBytes { get; init; } = Array.Empty<byte>();
-}
-
 /// <summary>
 /// Enumerates page-level image XObjects and returns their encoded bytes. Used to feed the JPEG
-/// decoder real <c>/DCTDecode</c> streams for validation (and, later, OCR).
+/// decoder real <c>/DCTDecode</c> streams (for validation and OCR).
 /// </summary>
 internal static class ImageExtractor
 {
     private static readonly PdfDictionary Empty = new PdfDictionary(new Dictionary<string, PdfObject>());
 
-    public static IReadOnlyList<EmbeddedImage> Extract(Stream stream, string? password = null)
+    public static IReadOnlyList<PdfImageInfo> Extract(Stream stream, string? password = null)
     {
         using PdfDocument document = PdfDocument.Open(stream, password);
-        var images = new List<EmbeddedImage>();
+        var images = new List<PdfImageInfo>();
 
         foreach (PdfPage page in document.Pages)
         {
@@ -54,13 +41,13 @@ internal static class ImageExtractor
                     continue;
                 }
 
-                images.Add(new EmbeddedImage
+                images.Add(new PdfImageInfo
                 {
                     PageIndex = page.Index,
                     DeclaredWidth = IntOf(document, image.Dictionary, "Width"),
                     DeclaredHeight = IntOf(document, image.Dictionary, "Height"),
                     Filter = FilterOf(image.Dictionary),
-                    RawBytes = image.GetRawBytes(),
+                    EncodedData = image.GetRawBytes(),
                 });
             }
         }

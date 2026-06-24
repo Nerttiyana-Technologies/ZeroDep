@@ -47,7 +47,7 @@ public sealed class JpegCorpusValidationTests
 
         foreach (string path in pdfs)
         {
-            IReadOnlyList<EmbeddedImage> images;
+            IReadOnlyList<PdfImageInfo> images;
             try
             {
                 using FileStream stream = File.OpenRead(path);
@@ -62,7 +62,7 @@ public sealed class JpegCorpusValidationTests
                 continue;
             }
 
-            foreach (EmbeddedImage image in images)
+            foreach (PdfImageInfo image in images)
             {
                 if (image.Filter is null || image.Filter.IndexOf("DCTDecode", StringComparison.Ordinal) < 0)
                 {
@@ -82,7 +82,7 @@ public sealed class JpegCorpusValidationTests
                 int headerW = 0, headerH = 0;
                 try
                 {
-                    JpegMetadata meta = JpegReader.ReadMetadata(image.RawBytes);
+                    JpegMetadata meta = JpegReader.ReadMetadata(image.EncodedData);
                     mode = meta.Mode;
                     headerW = meta.Width;
                     headerH = meta.Height;
@@ -113,7 +113,7 @@ public sealed class JpegCorpusValidationTests
                 fullDecodes++;
                 try
                 {
-                    RasterImage raster = JpegDecoder.Decode(image.RawBytes);
+                    RasterImage raster = JpegDecoder.Decode(image.EncodedData);
 
                     // Decoder correctness: decoded pixels must match the JPEG's OWN header dimensions.
                     if (raster.Width == headerW && raster.Height == headerH)

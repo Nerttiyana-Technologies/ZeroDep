@@ -45,7 +45,13 @@ public static class DocumentClassifier
         bool ocrPresent = false;
         foreach (TextRunInfo run in analysis.TextRuns)
         {
-            if (run.IsOcrLayer)
+            // OCR-recovered text marks the page as ScannedWithOcr, but is NOT counted as real
+            // (embedded, visible) text — the structural categories stay content-honest.
+            if (run.Source == TextSource.OcrGenerated)
+            {
+                ocrPresent = true;
+            }
+            else if (run.IsOcrLayer)
             {
                 ocrPresent = true;
             }
