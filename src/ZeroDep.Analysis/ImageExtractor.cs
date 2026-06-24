@@ -41,12 +41,17 @@ internal static class ImageExtractor
                     continue;
                 }
 
+                string? filter = FilterOf(image.Dictionary);
+                int width = IntOf(document, image.Dictionary, "Width");
+                int height = IntOf(document, image.Dictionary, "Height");
+
                 images.Add(new PdfImageInfo
                 {
                     PageIndex = page.Index,
-                    DeclaredWidth = IntOf(document, image.Dictionary, "Width"),
-                    DeclaredHeight = IntOf(document, image.Dictionary, "Height"),
-                    Filter = FilterOf(image.Dictionary),
+                    DeclaredWidth = width,
+                    DeclaredHeight = height,
+                    Filter = filter,
+                    Ccitt = filter == "CCITTFaxDecode" ? CcittOf(document, image.Dictionary, width, height) : null,
                     EncodedData = image.GetRawBytes(),
                 });
             }
@@ -57,6 +62,49 @@ internal static class ImageExtractor
 
     private static int IntOf(PdfDocument document, PdfDictionary dict, string key)
         => document.Resolve(dict[key] ?? PdfNull.Instance) is PdfNumber n ? (int)n.AsInt64 : 0;
+
+    private static CcittParameters CcittOf(PdfDocument document, PdfDictionary imageDict, int width, int height)
+    {
+        // /DecodeParms may be a dictionary, or an array aligned with the /Filter array (use the entry
+        // that actually carries CCITT keys). Defaults per ISO 32000-2 §7.4.6.
+        PdfDictionary parms = FindCcittParms(document, imageDict["DecodeParms"] ?? imageDict["DP"]);
+
+        int columns = parms["Columns"] is not null ? IntOf(document, parms, "Columns") : (width > 0 ? width : 1728);
+        int rows = parms["Rows"] is not null ? IntOf(document, parms, "Rows") : height;
+
+        return new CcittParameters
+        {
+            K = IntOf(document, parms, "K"),
+            Columns = columns,
+            Rows = rows,
+            BlackIs1 = BoolOf(document, parms, "BlackIs1"),
+            EncodedByteAlign = BoolOf(document, parms, "EncodedByteAlign"),
+        };
+    }
+
+    private static PdfDictionary FindCcittParms(PdfDocument document, PdfObject? parms)
+    {
+        switch (document.Resolve(parms ?? PdfNull.Instance))
+        {
+            case PdfDictionary dict:
+                return dict;
+            case PdfArray array:
+                foreach (PdfObject item in array.Items)
+                {
+                    if (document.Resolve(item) is PdfDictionary d && d["K"] is not null)
+                    {
+                        return d;
+                    }
+                }
+
+                break;
+        }
+
+        return Empty;
+    }
+
+    private static bool BoolOf(PdfDocument document, PdfDictionary dict, string key)
+        => document.Resolve(dict[key] ?? PdfNull.Instance) is PdfBoolean b && b.Value;
 
     private static string? FilterOf(PdfDictionary dict)
     {
