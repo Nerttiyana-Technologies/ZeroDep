@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Ocr</RootNamespace>
+    <AssemblyName>ZeroDep.Ocr</AssemblyName>
+    <!-- Builds and tests in CI, but is NOT published until the 1.2.0 OCR release. -->
+    <IsPackable>false</IsPackable>
+    <Description>Opt-in OCR orchestration for ZeroDep: a pluggable IOcrEngine that reads text from raster pages with no embedded text layer. Engine adapters ship as separate packages.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

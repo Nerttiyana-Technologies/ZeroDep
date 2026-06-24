@@ -4,7 +4,24 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.0.1 — Unreleased
+## 1.1.0 — Unreleased
+
+### Added
+
+- **Pure-BCL JPEG (`/DCTDecode`) decoder.** A complete, dependency-free JPEG decoder covering
+  **baseline**, **extended-sequential**, and **progressive** coding, plus **CMYK/YCCK** (Adobe APP14,
+  inverted-CMYK handling), chroma upsampling, restart intervals, and YCbCr→RGB conversion. New public
+  types in `ZeroDep.Filters`: `JpegReader` (header/dimension parsing and validation), `JpegDecoder`
+  (full pixel decode to `RasterImage`), `JpegMetadata`, `JpegMode`, and `JpegComponent`. Validated
+  against 105,000+ real embedded JPEGs (baseline, progressive, and CMYK) with zero decode errors; the
+  header parser also flags non-conformant PDFs whose declared image dimensions disagree with the JPEG.
+
+### Notes
+
+- This decoder provides the pixels for the upcoming OCR stage (1.2.0) and lets callers validate
+  declared vs. actual image dimensions. The core engine remains 100% dependency-free.
+
+## 1.0.1
 
 ### Fixed
 
@@ -92,10 +109,10 @@ third-party or native libraries — and emits a typed, versioned JSON graph.
 Each release is additive and keeps the public API backward-compatible; the core stays 100%
 dependency-free.
 
-- **1.1.0 (next, highest priority)** — text from images (OCR): an opt-in `ZeroDep.Ocr` package that
-  reads text from raster pages with no embedded text layer (today classified `ScannedImageOnly`).
-- **1.2.0** — JPEG (`/DCTDecode`) pixel decode.
-- **1.3.0** — CCITT Group 3/4, LZW-image, and RunLength decoders.
+- **1.1.0 (next)** — JPEG (`/DCTDecode`) pure-BCL decode: the prerequisite that gives OCR real pixels.
+- **1.2.0 (highest priority)** — text from images (OCR): an opt-in `ZeroDep.Ocr` package + `IOcrEngine`
+  adapters that read text from raster pages with no embedded text layer (today `ScannedImageOnly`).
+- **1.3.0** — CCITT Group 3/4 + RunLength decoders (bi-level scans → OCR coverage).
 - **1.4.0** — JBIG2 and JPX (JPEG 2000) decoders.
 - **1.5.0** — color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC).
 - **2.0.0** — font program parsing & glyph rasterization.

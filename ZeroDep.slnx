@@ -20,6 +20,7 @@
     <Project Path="src/ZeroDep.Analysis/ZeroDep.Analysis.csproj" />
     <Project Path="src/ZeroDep.Json/ZeroDep.Json.csproj" />
     <Project Path="src/ZeroDep.Batch/ZeroDep.Batch.csproj" />
+    <Project Path="src/ZeroDep.Ocr/ZeroDep.Ocr.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ZeroDep.Tests/ZeroDep.Tests.csproj" />
@@ -35,5 +36,6 @@
     <Project Path="tests/ZeroDep.Analysis.Tests/ZeroDep.Analysis.Tests.csproj" />
     <Project Path="tests/ZeroDep.Json.Tests/ZeroDep.Json.Tests.csproj" />
     <Project Path="tests/ZeroDep.Batch.Tests/ZeroDep.Batch.Tests.csproj" />
+    <Project Path="tests/ZeroDep.Ocr.Tests/ZeroDep.Ocr.Tests.csproj" />
   </Folder>
 </Solution>
