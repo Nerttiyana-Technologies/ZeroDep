@@ -28,6 +28,33 @@ jobs:
       - name: Derive version from tag
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
+      # Release gate: the docs must already describe this version before we publish it.
+      # Hard-fails on a missing/undated CHANGELOG entry; warns if the README roadmap is not updated.
+      - name: Verify docs match the release version
+        run: |
+          set -euo pipefail
+          V="${VERSION//./\\.}"
+
+          entry="$(grep -E "^## ${V}([^0-9]|$)" CHANGELOG.md | head -1 || true)"
+          if [ -z "$entry" ]; then
+            echo "::error::CHANGELOG.md has no '## ${VERSION}' section. Add a dated entry before tagging."
+            exit 1
+          fi
+          if echo "$entry" | grep -qi "unreleased"; then
+            echo "::error::CHANGELOG.md entry for ${VERSION} is still 'Unreleased'. Set its release date (## ${VERSION} — $(date +%Y-%m-%d))."
+            exit 1
+          fi
+          if ! echo "$entry" | grep -qE "[0-9]{4}-[0-9]{2}-[0-9]{2}"; then
+            echo "::error::CHANGELOG.md entry for ${VERSION} has no release date (expected '## ${VERSION} — YYYY-MM-DD')."
+            exit 1
+          fi
+          echo "CHANGELOG ok: ${entry}"
+
+          roadmap="$(grep -E "\*\*${V}\*\*" README.md || true)"
+          if [ -n "$roadmap" ] && echo "$roadmap" | grep -qiE "in progress|planned"; then
+            echo "::warning::README roadmap row for ${VERSION} is not marked 'Released': ${roadmap}"
+          fi
+
       - name: Build
         run: dotnet build ZeroDep.slnx -c Release -p:Version="$VERSION"
 

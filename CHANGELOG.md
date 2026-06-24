@@ -4,7 +4,26 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.2.1 — Unreleased
+## 1.3.0 — Unreleased
+
+### Added
+
+- **Pure-BCL CCITT (`/CCITTFaxDecode`) decoder** for bi-level (fax-style) document scans — the most
+  common scan type after JPEG. Covers **Group 4** (T.6, two-dimensional), **Group 3 1D** (T.4 Modified
+  Huffman), and **Group 3 2D** (Modified READ with EOL/tag handling), honouring `/DecodeParms`
+  (`K`, `Columns`, `Rows`, `BlackIs1`, `EncodedByteAlign`). New public types in `ZeroDep.Filters`:
+  `CcittFaxDecode` (decode to a `RasterImage`) and `CcittParameters`. Validated against the real corpus:
+  ~5,000 Group-4 images and all Group-3 images decoded to their declared dimensions with zero errors.
+- **OCR over CCITT scans.** `OcrImageConverter.FromCcitt` bridges decoded bi-level rasters into the OCR
+  pipeline, and `OcrProcessor` now recovers text from `/CCITTFaxDecode` images (alongside `/DCTDecode`).
+- **`PdfImageInfo.Ccitt`** — the captured CCITT decode parameters for single-filter `/CCITTFaxDecode`
+  images, surfaced via `PdfAnalyzer.ExtractImages`.
+
+### Notes
+
+- The CCITT decoder is pure BCL and adds no dependency. `/RunLengthDecode` was already supported.
+
+## 1.2.1 — 2026-06-24
 
 ### Added
 

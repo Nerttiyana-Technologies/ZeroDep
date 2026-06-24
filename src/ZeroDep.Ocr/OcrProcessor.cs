@@ -42,20 +42,19 @@ public static class OcrProcessor
         var ocrRuns = new List<TextRunInfo>();
         foreach (PdfImageInfo image in images)
         {
-            // Only single-filter JPEG is decodable today (the 1.1.0 decoder).
-            if (image.Filter != "DCTDecode")
-            {
-                continue;
-            }
-
-            DecodedImage decoded;
+            DecodedImage? decoded;
             try
             {
-                decoded = OcrImageConverter.FromJpeg(image.EncodedData);
+                decoded = Decode(image);
             }
             catch (Exception)
             {
                 continue;   // undecodable image is isolated, never aborts the document
+            }
+
+            if (decoded is null)
+            {
+                continue;   // filter not supported (yet)
             }
 
             OcrResult result;
@@ -110,5 +109,21 @@ public static class OcrProcessor
             Coverage = analysis.Coverage,
             ImageAreaFraction = analysis.ImageAreaFraction,
         };
+    }
+
+    // Decodes a supported single-filter image to pixels, or returns null if the filter is unsupported.
+    private static DecodedImage? Decode(PdfImageInfo image)
+    {
+        switch (image.Filter)
+        {
+            case "DCTDecode":
+                return OcrImageConverter.FromJpeg(image.EncodedData);
+
+            case "CCITTFaxDecode" when image.Ccitt is not null:
+                return OcrImageConverter.FromCcitt(image.EncodedData, image.Ccitt);
+
+            default:
+                return null;   // other filters not yet supported
+        }
     }
 }

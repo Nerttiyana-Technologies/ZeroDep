@@ -314,7 +314,7 @@ bytes → lexer → object resolver → security/decryption → filters
 | Integrity validator | Pre-flight accept/reject gate (no salvage) |
 | Object resolver | Xref tables + streams, object streams, indirect refs, `/Prev` chains |
 | Security | Standard-handler key derivation and per-object decryption |
-| Filters | Flate, LZW, ASCIIHex/85, predictors; full JPEG (`/DCTDecode`) decode; metadata-only passthrough for CCITT/JBIG2 |
+| Filters | Flate, LZW, ASCIIHex/85, RunLength, predictors; full JPEG (`/DCTDecode`) and CCITT (`/CCITTFaxDecode`, Group 3/4) decode; metadata-only passthrough for JBIG2 |
 | Document model | Catalog, page tree, resources, fonts, AcroForm |
 | Content interpreter | Text and image-placement operator state machine |
 | Feature engines | DPI, text/OCR, forms |
@@ -330,9 +330,9 @@ package.
 |---------|------------|--------|
 | **1.0.x** | Structural analysis: DPI, text & OCR-layer, AcroForms, encryption, validation, JSON, batch | Released |
 | **1.1.0** | **JPEG (`/DCTDecode`) pure-BCL decode** — baseline, extended-sequential, progressive, and CMYK/YCCK. Gives OCR real pixels and validates declared vs. actual image dimensions | Released |
-| **1.2.0** (current) | **Text from images (OCR)** — opt-in, dependency-free `ZeroDep.Ocr` with a pluggable `IOcrEngine`; recovers text from raster pages with no embedded text layer (`ScannedImageOnly` → `ScannedWithOcr`) | Released |
-| **1.2.1** | Reference engine adapters — `ZeroDep.Ocr.Tesseract` (Latin scripts) and `ZeroDep.Ocr.Paddle` (CJK), both out-of-process and dependency-free, gated on a measured accuracy benchmark | In progress |
-| 1.3.0 | CCITT Group 3/4 + RunLength decoders (bi-level scans → OCR coverage) | Planned |
+| **1.2.0** | **Text from images (OCR)** — opt-in, dependency-free `ZeroDep.Ocr` with a pluggable `IOcrEngine`; recovers text from raster pages with no embedded text layer (`ScannedImageOnly` → `ScannedWithOcr`) | Released |
+| **1.2.1** | Reference engine adapters — `ZeroDep.Ocr.Tesseract` (Latin scripts) and `ZeroDep.Ocr.Paddle` (CJK), both out-of-process and dependency-free, gated on a measured accuracy benchmark | Released |
+| **1.3.0** (current) | **CCITT (`/CCITTFaxDecode`) pure-BCL decode** — Group 4, Group 3 1D & 2D — brings bi-level (fax-style) document scans into the OCR pipeline. Validated on ~5,000 corpus images | Released |
 | 1.4.0 | JBIG2 and JPX (JPEG 2000) decoders | Planned |
 | 1.5.0 | Color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC) | Planned |
 | 2.0.0 | Font program parsing & glyph rasterization | Planned |
