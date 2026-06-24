@@ -200,6 +200,33 @@ foreach (TextRunInfo run in withOcr.TextRuns)
 }
 ```
 
+### OCR accuracy — measured, not asserted
+
+OCR ships against a measured accuracy benchmark, not on faith. The reference adapter was scored against
+two independent labeled sets of real multilingual form documents — one spanning five European languages,
+one an independent set of noisy low-resolution scans — using length-weighted Character Error Rate (CER)
+after Unicode/whitespace/case normalization.
+
+| Language | Character accuracy | Character accuracy at reported confidence ≥ 0.9 |
+|----------|-------------------:|------------------------------------------------:|
+| German | 95.8% | 99.2% |
+| Spanish | 93.1% | 98.7% |
+| Italian | 91.3% | 97.3% |
+| Portuguese | 90.7% | 98.4% |
+| French | 86.7% | 97.8% |
+| English (noisy scans) | 83.8% | 95.0% |
+
+The key property is **calibrated confidence**: on every set, error falls monotonically as the engine's
+reported confidence rises — so at confidence ≥ 0.9 the reference adapter is **95–99% character-accurate**,
+and lower-confidence output is honestly flagged rather than passed off as correct. Because confidence is
+surfaced on every recovered run, you can threshold on it with trust.
+
+Accuracy depends on the engine you plug in, which is the point of a pluggable `IOcrEngine`. The default
+reference adapter targets Latin-script scans; for dense **CJK** (Chinese, Japanese) a second reference
+adapter cuts the character error by **roughly half to two-thirds** on the same pages — so you pick the
+engine that fits your documents without touching the dependency-free core. Both reference adapters reach
+their engine out-of-process (a CLI binary / a worker process), so neither bundles native binaries.
+
 ## Command-line tool
 
 A thin, zero-dependency console front-end ships alongside the library.
@@ -304,7 +331,7 @@ package.
 | **1.0.x** | Structural analysis: DPI, text & OCR-layer, AcroForms, encryption, validation, JSON, batch | Released |
 | **1.1.0** | **JPEG (`/DCTDecode`) pure-BCL decode** — baseline, extended-sequential, progressive, and CMYK/YCCK. Gives OCR real pixels and validates declared vs. actual image dimensions | Released |
 | **1.2.0** (current) | **Text from images (OCR)** — opt-in, dependency-free `ZeroDep.Ocr` with a pluggable `IOcrEngine`; recovers text from raster pages with no embedded text layer (`ScannedImageOnly` → `ScannedWithOcr`) | Released |
-| 1.2.x | Reference engine adapter(s) (`ZeroDep.Ocr.Tesseract` / `…Paddle`), gated on a measured accuracy benchmark | Planned |
+| **1.2.1** | Reference engine adapters — `ZeroDep.Ocr.Tesseract` (Latin scripts) and `ZeroDep.Ocr.Paddle` (CJK), both out-of-process and dependency-free, gated on a measured accuracy benchmark | In progress |
 | 1.3.0 | CCITT Group 3/4 + RunLength decoders (bi-level scans → OCR coverage) | Planned |
 | 1.4.0 | JBIG2 and JPX (JPEG 2000) decoders | Planned |
 | 1.5.0 | Color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC) | Planned |

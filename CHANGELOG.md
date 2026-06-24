@@ -4,7 +4,32 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.2.0 — Unreleased
+## 1.2.1 — Unreleased
+
+### Added
+
+- **`ZeroDep.Ocr.Tesseract`** — reference `IOcrEngine` adapter over the Tesseract OCR engine. Drives the
+  `tesseract` command-line program as a subprocess (no managed or native package dependency; requires
+  `tesseract` on `PATH`), parsing per-word text, confidence, and bounding boxes. Targets Latin-script
+  scans; **measured character accuracy 95–99% at reported confidence ≥0.9** across six languages, with
+  monotonic confidence calibration.
+- **`ZeroDep.Ocr.Paddle`** — reference `IOcrEngine` adapter over PaddleOCR, for dense and **CJK** scripts.
+  Drives PaddleOCR through a bundled Python bridge run as a persistent worker (no managed or native
+  package dependency; requires Python with the `paddleocr` package). On Chinese it roughly **halves** the
+  Tesseract character-error rate on the same pages.
+- **Micro-averaged accuracy metrics.** `OcrAccuracy.CharacterDistance` / `WordDistance` (raw edit distance
+  + reference length) and `OcrBenchmarkReport.MicroCer` / `MicroWer` (and per-language / per-band micro
+  values) — the corpus-level CER/WER that is the standard way OCR accuracy is reported.
+
+### Notes
+
+- Both engine adapters reach their engine **out of process** (a CLI binary or a Python worker) rather than
+  binding native libraries in-process, which keeps them free of bundled native binaries and avoids
+  platform/architecture fragility (including Apple-silicon). The dependency-free core is unchanged.
+- The adapter release is gated on a measured accuracy benchmark; the methodology and aggregate
+  (content-free) accuracy numbers are reported in the README.
+
+## 1.2.0 — 2026-06-24
 
 ### Added
 

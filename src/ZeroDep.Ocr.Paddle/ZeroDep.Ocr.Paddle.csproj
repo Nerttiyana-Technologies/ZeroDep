@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Ocr.Paddle</RootNamespace>
+    <AssemblyName>ZeroDep.Ocr.Paddle</AssemblyName>
+    <!-- OCR engines are modern-only; drop netstandard2.0 for this adapter. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Description>PaddleOCR IOcrEngine adapter for ZeroDep.Ocr — drives the PaddleOCR Python package via a bundled script to recover text from scanned images, with strong CJK support. No managed or native package dependency; requires Python with the paddleocr package installed.</Description>
+    <PackageTags>pdf;ocr;paddleocr;cjk;zerodep</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Ocr\ZeroDep.Ocr.csproj" />
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+  </ItemGroup>
+  <!--
+    No PackageReference: this adapter invokes PaddleOCR through a small bundled Python script as a
+    subprocess rather than binding native PaddleInference in-process. That keeps platform support equal
+    to PaddleOCR's own (incl. Apple-silicon macOS) and keeps the package free of bundled native binaries.
+  -->
+  <ItemGroup>
+    <!--
+      Ship the Python bridge next to the assembly, both for local builds (CopyToOutputDirectory) and for
+      NuGet consumers (PackageCopyToOutput → copied into the consumer's output so AppContext.BaseDirectory
+      resolves it). The adapter loads it from AppContext.BaseDirectory at runtime.
+    -->
+    <Content Include="zerodep_paddle_ocr.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>contentFiles\any\any\zerodep_paddle_ocr.py</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Ocr.Paddle.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Ocr.Benchmark" />
+  </ItemGroup>
+</Project>

@@ -450,6 +450,13 @@ ADR-*.md
 /data/
 /private/data/
 
+# Private OCR accuracy-benchmark tool — reads the private ground-truth data and references specific
+# dataset layouts; keep it (and any dataset names) out of the public repository.
+/src/ZeroDep.Ocr.Benchmark/
+
+# Downloaded OCR language models (Tesseract traineddata, etc.) — not committed.
+/tessdata/
+
 # ──────────────────────────────────────────────────────────────
 # OS / IDE / local scratch — never committed
 # ──────────────────────────────────────────────────────────────
