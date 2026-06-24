@@ -7,6 +7,6 @@ public sealed class ZeroDepInfoTests
     [Fact]
     public void VersionStartsWithExpectedPrefix()
     {
-        Assert.StartsWith("1.1.0", ZeroDepInfo.Version);
+        Assert.StartsWith("1.2.0", ZeroDepInfo.Version);
     }
 }

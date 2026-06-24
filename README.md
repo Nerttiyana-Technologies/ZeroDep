@@ -46,6 +46,7 @@ zero-dependency promise while still answering the questions that matter for docu
 | **Integrity validation** | A pre-flight gate rejects corrupted/malformed files with a machine-readable reason; it never attempts risky salvage. |
 | **Typed JSON output** | The full parsed graph as a stable, versioned JSON schema, written by a pure-BCL serializer. |
 | **Batch corpus runner** | A resumable, parallel runner over a directory tree that produces per-file results and publishable, content-free aggregate statistics. |
+| **OCR-from-image** (opt-in) | A dependency-free `ZeroDep.Ocr` package with a pluggable `IOcrEngine`: decode a scanned page's image, run any OCR engine you supply, and fold the recovered text back in tagged `OcrGenerated` with confidence — never silently mixed with embedded text. |
 
 ## Scope: analyze, don't render
 
@@ -168,6 +169,37 @@ RasterImage image = JpegDecoder.Decode(jpeg);   // baseline, progressive, or CMY
 // image.Samples is row-major, interleaved; image.Components is 1 (gray) or 3 (RGB)
 ```
 
+### Recover text from a scanned page (OCR)
+
+`ZeroDep.Ocr` is an opt-in, dependency-free package. You supply the OCR engine by implementing
+`IOcrEngine` (over Tesseract, PaddleOCR, a cloud API — your choice); ZeroDep decodes the page image,
+drives your engine, and merges the result as `OcrGenerated` text.
+
+```csharp
+using ZeroDep;
+using ZeroDep.Abstractions;
+using ZeroDep.Ocr;
+
+sealed class MyEngine : IOcrEngine
+{
+    public OcrResult Recognize(DecodedImage image, OcrOptions options) => /* call your OCR engine */;
+}
+
+using var pdf = File.OpenRead("scanned.pdf");
+DocumentAnalysis analysis = PdfAnalyzer.Analyze(pdf);
+
+pdf.Position = 0;
+IReadOnlyList<PdfImageInfo> images = PdfAnalyzer.ExtractImages(pdf);
+
+DocumentAnalysis withOcr = OcrProcessor.Augment(analysis, images, new MyEngine(), new OcrOptions { MinConfidence = 0.6 });
+
+foreach (TextRunInfo run in withOcr.TextRuns)
+{
+    if (run.Source == TextSource.OcrGenerated)
+        Console.WriteLine($"[ocr {run.Confidence:P0}] {run.Text}");   // tagged, never mistaken for embedded text
+}
+```
+
 ## Command-line tool
 
 A thin, zero-dependency console front-end ships alongside the library.
@@ -269,9 +301,10 @@ package.
 
 | Release | Capability | Status |
 |---------|------------|--------|
-| **1.0.1** (current) | Structural analysis: DPI, text & OCR-layer, AcroForms, encryption, validation, JSON, batch | Released |
-| **1.1.0** | **JPEG (`/DCTDecode`) pure-BCL decode** — complete: baseline, extended-sequential, progressive, and CMYK/YCCK. Gives OCR real pixels and validates declared vs. actual image dimensions | Ready |
-| **1.2.0** | **Text from images (OCR)** — opt-in `ZeroDep.Ocr` + `IOcrEngine` adapters; reads text from raster pages with no embedded text layer (today `ScannedImageOnly`) | Highest priority |
+| **1.0.x** | Structural analysis: DPI, text & OCR-layer, AcroForms, encryption, validation, JSON, batch | Released |
+| **1.1.0** | **JPEG (`/DCTDecode`) pure-BCL decode** — baseline, extended-sequential, progressive, and CMYK/YCCK. Gives OCR real pixels and validates declared vs. actual image dimensions | Released |
+| **1.2.0** (current) | **Text from images (OCR)** — opt-in, dependency-free `ZeroDep.Ocr` with a pluggable `IOcrEngine`; recovers text from raster pages with no embedded text layer (`ScannedImageOnly` → `ScannedWithOcr`) | Released |
+| 1.2.x | Reference engine adapter(s) (`ZeroDep.Ocr.Tesseract` / `…Paddle`), gated on a measured accuracy benchmark | Planned |
 | 1.3.0 | CCITT Group 3/4 + RunLength decoders (bi-level scans → OCR coverage) | Planned |
 | 1.4.0 | JBIG2 and JPX (JPEG 2000) decoders | Planned |
 | 1.5.0 | Color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC) | Planned |
