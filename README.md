@@ -39,6 +39,7 @@ zero-dependency promise while still answering the questions that matter for docu
 | Capability | What it does |
 |------------|--------------|
 | **Image DPI analysis** | Computes the effective resolution of every placed raster image from the content-stream CTM, reports the limiting (smaller) axis, and flags images below a configurable threshold. Page-area coverage is reported so small logos/stamps can be excluded from scan-quality judgments. |
+| **JPEG decoding** | A complete pure-BCL JPEG (`/DCTDecode`) decoder — baseline, extended-sequential, progressive, and CMYK/YCCK (Adobe APP14) — decoding image streams to RGB/grayscale pixels and validating declared vs. actual dimensions. |
 | **Text & OCR-layer extraction** | Pulls positioned text runs (`BT`/`ET`, `Tj`/`TJ`), resolves Unicode via `/ToUnicode` CMaps with `/Encoding` + `/Differences` fallback, and tags the invisible (`Tr 3`) OCR layer that scanners embed. |
 | **AcroForm mapping** | Traverses `/AcroForm` fields by name (never geometry): fully-qualified names, labels, values, checkbox/radio state from the widget `/AS` + `/V`, page association, and dynamic-XFA detection. |
 | **Encryption** | Standard security-handler decryption — RC4, AES-128 (AESV2), AES-256 (AESV3, R6) — authenticated with a supplied or empty/default password. |
@@ -53,8 +54,8 @@ zero-dependency promise while still answering the questions that matter for docu
 | Parse xref tables and streams, object streams, `/Prev` chains | Rasterize pages to bitmaps |
 | Validate integrity and reject corrupted files | Salvage/repair broken files |
 | Decrypt the standard security handler (RC4/AES-128/AES-256) | Public-key / certificate security handlers |
-| Decode `/FlateDecode`, `/LZWDecode`, ASCII filters | Decode `/DCTDecode`, `/CCITTFaxDecode`, `/JBIG2Decode` *pixels* |
-| Read image `/Width`, `/Height`, `/BitsPerComponent` | Produce or transform image pixels |
+| Decode `/FlateDecode`, `/LZWDecode`, ASCII, and `/DCTDecode` (JPEG) to pixels | Decode `/CCITTFaxDecode`, `/JBIG2Decode` *pixels* (planned) |
+| Read image `/Width`, `/Height`, `/BitsPerComponent` | Rasterize whole pages (vector + text + image compositing) |
 | Interpret content-stream operators for text and placement | Execute path/shading/vector rendering |
 | Resolve `/ToUnicode` to UTF-8 | Embed, subset, or rasterize fonts |
 | Map `/AcroForm` fields and values | Render form appearances to pixels |
@@ -153,6 +154,20 @@ string json = PdfAnalyzer.ToJson(File.OpenRead("invoice.pdf"), indent: true);
 File.WriteAllText("invoice.json", json);
 ```
 
+### Decode a JPEG to pixels
+
+```csharp
+using ZeroDep.Filters;
+
+byte[] jpeg = File.ReadAllBytes("photo.jpg");   // or a /DCTDecode image stream
+
+JpegMetadata meta = JpegReader.ReadMetadata(jpeg);    // dimensions, mode, components — no pixel decode
+Console.WriteLine($"{meta.Width}x{meta.Height}, {meta.Mode}");
+
+RasterImage image = JpegDecoder.Decode(jpeg);   // baseline, progressive, or CMYK/YCCK → RGB/grayscale
+// image.Samples is row-major, interleaved; image.Components is 1 (gray) or 3 (RGB)
+```
+
 ## Command-line tool
 
 A thin, zero-dependency console front-end ships alongside the library.
@@ -240,7 +255,7 @@ bytes → lexer → object resolver → security/decryption → filters
 | Integrity validator | Pre-flight accept/reject gate (no salvage) |
 | Object resolver | Xref tables + streams, object streams, indirect refs, `/Prev` chains |
 | Security | Standard-handler key derivation and per-object decryption |
-| Filters | Flate, LZW, ASCIIHex/85, predictors; metadata-only passthrough for image codecs |
+| Filters | Flate, LZW, ASCIIHex/85, predictors; full JPEG (`/DCTDecode`) decode; metadata-only passthrough for CCITT/JBIG2 |
 | Document model | Catalog, page tree, resources, fonts, AcroForm |
 | Content interpreter | Text and image-placement operator state machine |
 | Feature engines | DPI, text/OCR, forms |
@@ -254,10 +269,10 @@ package.
 
 | Release | Capability | Status |
 |---------|------------|--------|
-| **1.0.0** (current) | Structural analysis: DPI, text & OCR-layer, AcroForms, encryption, validation, JSON, batch | Released |
-| **1.1.0** — next | **Text from images (OCR)** — opt-in `ZeroDep.Ocr` package; reads text from raster pages with no embedded text layer (today classified `ScannedImageOnly`) | Highest priority |
-| 1.2.0 | JPEG (`/DCTDecode`) pixel decode (pure BCL) | Planned |
-| 1.3.0 | CCITT Group 3/4, LZW-image, and RunLength decoders | Planned |
+| **1.0.1** (current) | Structural analysis: DPI, text & OCR-layer, AcroForms, encryption, validation, JSON, batch | Released |
+| **1.1.0** | **JPEG (`/DCTDecode`) pure-BCL decode** — complete: baseline, extended-sequential, progressive, and CMYK/YCCK. Gives OCR real pixels and validates declared vs. actual image dimensions | Ready |
+| **1.2.0** | **Text from images (OCR)** — opt-in `ZeroDep.Ocr` + `IOcrEngine` adapters; reads text from raster pages with no embedded text layer (today `ScannedImageOnly`) | Highest priority |
+| 1.3.0 | CCITT Group 3/4 + RunLength decoders (bi-level scans → OCR coverage) | Planned |
 | 1.4.0 | JBIG2 and JPX (JPEG 2000) decoders | Planned |
 | 1.5.0 | Color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC) | Planned |
 | 2.0.0 | Font program parsing & glyph rasterization | Planned |
