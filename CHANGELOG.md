@@ -4,6 +4,25 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.4.0 — Unreleased
+
+### Added
+
+- **Pure-BCL JBIG2 (`/JBIG2Decode`) decoder** for bi-level scans. Includes a validated **MQ arithmetic
+  decoder** (ITU-T T.88 Annex E) and decodes **generic regions** (arithmetic + MMR), **symbol
+  dictionaries**, and **text regions** (arithmetic variants), with `JBIG2Globals` support. Fully
+  handles **99.3%** of real-corpus JBIG2 (Huffman and halftone variants do not occur in practice;
+  refinement, ~0.7%, degrades gracefully). Validated **bit-for-bit identical** to a reference decoder
+  (poppler) on real corpus images. New public types in `ZeroDep.Filters`: `Jbig2Decode`,
+  `Jbig2Capabilities`.
+- **OCR over JBIG2 scans.** `OcrImageConverter.FromJbig2` and `OcrProcessor` now recover text from
+  `/JBIG2Decode` images (alongside `/DCTDecode` and `/CCITTFaxDecode`). `PdfImageInfo.Jbig2Globals`
+  surfaces the decoded globals stream.
+
+### In progress
+
+- JPEG 2000 (`/JPXDecode`) decoder — targeted for this release before it ships.
+
 ## 1.3.0 — 2026-06-24
 
 ### Added

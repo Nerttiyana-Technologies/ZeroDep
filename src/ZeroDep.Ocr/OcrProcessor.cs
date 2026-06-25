@@ -122,6 +122,9 @@ public static class OcrProcessor
             case "CCITTFaxDecode" when image.Ccitt is not null:
                 return OcrImageConverter.FromCcitt(image.EncodedData, image.Ccitt);
 
+            case "JBIG2Decode":
+                return OcrImageConverter.FromJbig2(image.EncodedData, image.Jbig2Globals, image.DeclaredWidth, image.DeclaredHeight);
+
             default:
                 return null;   // other filters not yet supported
         }

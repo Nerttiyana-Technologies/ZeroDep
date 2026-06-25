@@ -8,5 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="ZeroDep.Filters.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Analysis.Tests" />
   </ItemGroup>
 </Project>
