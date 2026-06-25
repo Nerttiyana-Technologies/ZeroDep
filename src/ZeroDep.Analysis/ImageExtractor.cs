@@ -52,6 +52,7 @@ internal static class ImageExtractor
                     DeclaredHeight = height,
                     Filter = filter,
                     Ccitt = filter == "CCITTFaxDecode" ? CcittOf(document, image.Dictionary, width, height) : null,
+                    Jbig2Globals = filter == "JBIG2Decode" ? Jbig2GlobalsOf(document, image.Dictionary) : null,
                     EncodedData = image.GetRawBytes(),
                 });
             }
@@ -105,6 +106,47 @@ internal static class ImageExtractor
 
     private static bool BoolOf(PdfDocument document, PdfDictionary dict, string key)
         => document.Resolve(dict[key] ?? PdfNull.Instance) is PdfBoolean b && b.Value;
+
+    private static byte[]? Jbig2GlobalsOf(PdfDocument document, PdfDictionary imageDict)
+    {
+        // /DecodeParms may be a dictionary or an array (filter chain); find the one with JBIG2Globals.
+        foreach (PdfDictionary parms in ParmDicts(document, imageDict["DecodeParms"] ?? imageDict["DP"]))
+        {
+            if (document.Resolve(parms["JBIG2Globals"] ?? PdfNull.Instance) is PdfStream globals)
+            {
+                try
+                {
+                    return StreamDecoder.Decode(globals);
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<PdfDictionary> ParmDicts(PdfDocument document, PdfObject? parms)
+    {
+        switch (document.Resolve(parms ?? PdfNull.Instance))
+        {
+            case PdfDictionary dict:
+                yield return dict;
+                break;
+            case PdfArray array:
+                foreach (PdfObject item in array.Items)
+                {
+                    if (document.Resolve(item) is PdfDictionary d)
+                    {
+                        yield return d;
+                    }
+                }
+
+                break;
+        }
+    }
 
     private static string? FilterOf(PdfDictionary dict)
     {

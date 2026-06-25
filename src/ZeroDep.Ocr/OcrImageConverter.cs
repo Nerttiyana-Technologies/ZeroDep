@@ -1,6 +1,7 @@
 using System;
 using ZeroDep.Abstractions;
 using ZeroDep.Filters;
+using ZeroDep.Filters.Jbig2;
 
 namespace ZeroDep.Ocr;
 
@@ -41,6 +42,19 @@ public static class OcrImageConverter
 
         return FromRaster(raster, dpi);
     }
+
+    /// <summary>
+    /// Decodes a JBIG2 (<c>/JBIG2Decode</c>) bi-level byte stream into a grayscale
+    /// <see cref="DecodedImage"/>. Foreground (1) is rendered dark (0) and background light (255),
+    /// which is the correct orientation for OCR (dark ink on a light page).
+    /// </summary>
+    /// <param name="data">The embedded JBIG2 segment stream.</param>
+    /// <param name="globals">The optional decoded <c>JBIG2Globals</c> stream, or null.</param>
+    /// <param name="width">The image width (PDF <c>/Width</c>).</param>
+    /// <param name="height">The image height (PDF <c>/Height</c>).</param>
+    /// <param name="dpi">The effective resolution the image is placed at, where known; 0 if unknown.</param>
+    public static DecodedImage FromJbig2(byte[] data, byte[]? globals, int width, int height, int dpi = 0)
+        => FromRaster(Jbig2Decode.Decode(data, globals, width, height), dpi);
 
     /// <summary>Converts a decoded <see cref="RasterImage"/> into a <see cref="DecodedImage"/>.</summary>
     /// <param name="raster">The decoded raster image (1 = grayscale, 3 = RGB).</param>

@@ -27,6 +27,12 @@ public sealed class PdfImageInfo
     /// </summary>
     public CcittParameters? Ccitt { get; init; }
 
+    /// <summary>
+    /// The decoded <c>JBIG2Globals</c> stream (shared symbol dictionaries) for a <c>/JBIG2Decode</c>
+    /// image that references one; otherwise null.
+    /// </summary>
+    public byte[]? Jbig2Globals { get; init; }
+
     /// <summary>The raw, still-encoded image bytes (e.g. the JPEG stream for a <c>/DCTDecode</c> image).</summary>
     public byte[] EncodedData { get; init; } = Array.Empty<byte>();
 }
