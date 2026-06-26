@@ -46,7 +46,7 @@ public sealed class DocumentJsonTests
 
         using JsonDocument doc = JsonDocument.Parse(json); // valid JSON is the primary assertion
         JsonElement root = doc.RootElement;
-        Assert.Equal("1.1", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("1.2", root.GetProperty("schemaVersion").GetString());
         Assert.Equal(2, root.GetProperty("pageCount").GetInt32());
 
         JsonElement page = root.GetProperty("pages")[0];

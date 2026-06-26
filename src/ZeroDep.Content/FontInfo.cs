@@ -6,19 +6,38 @@ using ZeroDep.Objects;
 
 namespace ZeroDep.Content;
 
-/// <summary>One decoded glyph: its Unicode text, advance width (in 1000-unit em), and whether it is a space.</summary>
+/// <summary>
+/// How a glyph's character code was resolved to Unicode — the basis for the per-page text-decode trust
+/// signal (ADR-0007). Authoritative means a reliable map said so; Fallback means we guessed a standard
+/// encoding with no map; Unmapped means nothing usable (emitted empty / non-printable).
+/// </summary>
+internal enum DecodeTier
+{
+    /// <summary>A usable /ToUnicode map, a producer-specified /Differences name, or a declared standard /Encoding.</summary>
+    Authoritative = 0,
+
+    /// <summary>A blind standard-encoding guess (no /ToUnicode, no /Differences, no declared encoding).</summary>
+    Fallback = 1,
+
+    /// <summary>No usable mapping — emitted empty, or a control / non-printable code point.</summary>
+    Unmapped = 2,
+}
+
+/// <summary>One decoded glyph: its Unicode text, advance width (in 1000-unit em), space flag, and decode tier.</summary>
 internal readonly struct Glyph
 {
-    public Glyph(string text, double widthEm, bool isSpace)
+    public Glyph(string text, double widthEm, bool isSpace, DecodeTier tier)
     {
         Text = text;
         WidthEm = widthEm;
         IsSpace = isSpace;
+        Tier = tier;
     }
 
     public string Text { get; }
     public double WidthEm { get; }
     public bool IsSpace { get; }
+    public DecodeTier Tier { get; }
 }
 
 /// <summary>
@@ -35,6 +54,8 @@ internal sealed class FontInfo
     private readonly Dictionary<int, double>? _cidWidths;
     private readonly Dictionary<int, string>? _differences;
     private readonly double _defaultWidth;
+    private readonly bool _namedBaseEncoding;
+    private readonly bool _symbolic;
 
     public FontInfo(PdfDictionary dict, Func<PdfObject, PdfObject> resolve, Func<PdfStream, byte[]> decode)
     {
@@ -62,6 +83,15 @@ internal sealed class FontInfo
         {
             _defaultWidth = 500;
             _firstChar = resolve(dict["FirstChar"] ?? PdfNull.Instance) is PdfNumber fc ? (int)fc.AsInt64 : 0;
+
+            // FontDescriptor /Flags: Symbolic (bit 3 = 4) without Nonsymbolic (bit 6 = 32). A symbolic font's
+            // codes index a custom built-in encoding, so a blind WinAnsi guess is unreliable (ADR-0007).
+            if (resolve(dict["FontDescriptor"] ?? PdfNull.Instance) is PdfDictionary descriptor
+                && resolve(descriptor["Flags"] ?? PdfNull.Instance) is PdfNumber flagsNum)
+            {
+                int flags = (int)flagsNum.AsInt64;
+                _symbolic = (flags & 4) != 0 && (flags & 32) == 0;
+            }
             if (resolve(dict["Widths"] ?? PdfNull.Instance) is PdfArray widths)
             {
                 _simpleWidths = new double[widths.Count];
@@ -75,18 +105,35 @@ internal sealed class FontInfo
                 _simpleWidths = Array.Empty<double>();
             }
 
-            // /Encoding /Differences (used when there is no /ToUnicode map).
-            if (_toUnicode is null && resolve(dict["Encoding"] ?? PdfNull.Instance) is PdfDictionary encoding
-                && resolve(encoding["Differences"] ?? PdfNull.Instance) is PdfArray differences)
+            // /Encoding can be a standard encoding name, or a dictionary with /BaseEncoding + /Differences.
+            PdfObject encodingObj = resolve(dict["Encoding"] ?? PdfNull.Instance);
+            string? baseEncodingName = null;
+            if (encodingObj is PdfName encName)
             {
-                _differences = new Dictionary<int, string>();
-                int code = 0;
-                foreach (PdfObject item in differences.Items)
+                baseEncodingName = encName.Value;
+            }
+            else if (encodingObj is PdfDictionary encoding)
+            {
+                if (resolve(encoding["BaseEncoding"] ?? PdfNull.Instance) is PdfName baseName)
                 {
-                    if (item is PdfInteger n) code = (int)n.Value;
-                    else if (item is PdfName name) _differences[code++] = GlyphList.ToUnicode(name.Value);
+                    baseEncodingName = baseName.Value;
+                }
+
+                // /Differences (used when there is no /ToUnicode map) — producer-specified glyph names.
+                if (_toUnicode is null && resolve(encoding["Differences"] ?? PdfNull.Instance) is PdfArray differences)
+                {
+                    _differences = new Dictionary<int, string>();
+                    int code = 0;
+                    foreach (PdfObject item in differences.Items)
+                    {
+                        if (item is PdfInteger n) code = (int)n.Value;
+                        else if (item is PdfName name) _differences[code++] = GlyphList.ToUnicode(name.Value);
+                    }
                 }
             }
+
+            _namedBaseEncoding = baseEncodingName is "WinAnsiEncoding" or "MacRomanEncoding"
+                or "StandardEncoding" or "PDFDocEncoding" or "MacExpertEncoding";
         }
     }
 
@@ -98,10 +145,38 @@ internal sealed class FontInfo
         {
             foreach (byte b in bytes)
             {
+                DecodeTier tier;
                 string? text = Lookup(b);
-                if (text is null && _differences is not null && _differences.TryGetValue(b, out string? diff)) text = diff;
-                text ??= WinAnsiString(b);
-                glyphs.Add(new Glyph(text, WidthOf(b), b == 32));
+                if (text is not null)
+                {
+                    tier = IsMeaningful(text) ? DecodeTier.Authoritative : DecodeTier.Unmapped;
+                }
+                else if (_differences is not null && _differences.TryGetValue(b, out string? diff))
+                {
+                    text = diff;
+                    tier = IsMeaningful(diff) ? DecodeTier.Authoritative : DecodeTier.Unmapped;
+                }
+                else
+                {
+                    text = WinAnsiString(b);
+                    if (text.Length == 0)
+                    {
+                        tier = DecodeTier.Unmapped;
+                    }
+                    else if (_namedBaseEncoding || !_symbolic)
+                    {
+                        // A declared standard /Encoding — or a non-symbolic font, for which a standard encoding
+                        // is the correct default — is authoritative.
+                        tier = DecodeTier.Authoritative;
+                    }
+                    else
+                    {
+                        // A symbolic font with no map/encoding: a blind WinAnsi guess is the wrong-decode risk.
+                        tier = DecodeTier.Fallback;
+                    }
+                }
+
+                glyphs.Add(new Glyph(text, WidthOf(b), b == 32, tier));
             }
         }
         else
@@ -109,7 +184,9 @@ internal sealed class FontInfo
             for (int i = 0; i + 1 < bytes.Length; i += 2)
             {
                 int code = (bytes[i] << 8) | bytes[i + 1];
-                glyphs.Add(new Glyph(Lookup(code) ?? string.Empty, WidthOf(code), false));
+                string? text = Lookup(code);
+                DecodeTier tier = text is not null && IsMeaningful(text) ? DecodeTier.Authoritative : DecodeTier.Unmapped;
+                glyphs.Add(new Glyph(text ?? string.Empty, WidthOf(code), false, tier));
             }
         }
         return glyphs;
@@ -163,6 +240,20 @@ internal sealed class FontInfo
             }
         }
         return map;
+    }
+
+    // A decoded string is "meaningful" if it carries at least one printable, non-replacement character.
+    private static bool IsMeaningful(string text)
+    {
+        foreach (char c in text)
+        {
+            if (c >= 0x20 && c != '�')
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string WinAnsiString(int code)

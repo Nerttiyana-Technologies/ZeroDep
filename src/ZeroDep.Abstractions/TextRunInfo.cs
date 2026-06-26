@@ -35,4 +35,13 @@ public sealed class TextRunInfo
     /// text. Lets consumers threshold OCR output rather than trusting it blindly.
     /// </summary>
     public double Confidence { get; init; } = 1.0;
+
+    /// <summary>Glyphs in this run decoded via an authoritative map (ToUnicode / named encoding / Differences).</summary>
+    public int AuthoritativeChars { get; init; }
+
+    /// <summary>Glyphs decoded by a blind standard-encoding guess (no map) — the wrong-decode risk (ADR-0007).</summary>
+    public int FallbackChars { get; init; }
+
+    /// <summary>Glyphs with no usable mapping (emitted empty / non-printable).</summary>
+    public int UnmappedChars { get; init; }
 }

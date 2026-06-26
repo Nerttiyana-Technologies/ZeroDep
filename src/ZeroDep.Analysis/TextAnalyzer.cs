@@ -70,6 +70,9 @@ internal static class TextAnalyzer
                     FontSize = run.FontSize,
                     RenderMode = run.RenderMode,
                     IsOcrLayer = run.IsOcrLayer,
+                    AuthoritativeChars = run.AuthoritativeChars,
+                    FallbackChars = run.FallbackChars,
+                    UnmappedChars = run.UnmappedChars,
                 });
             }
 

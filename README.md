@@ -303,7 +303,7 @@ reported with flags rather than dropped silently.
 
 ```jsonc
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.2",
   "status": "Processed",            // Processed | Rejected
   "rejection": null,                // { "reason": "TruncatedStream", "detail": "..." } when Rejected
   "pageCount": 3,
@@ -355,8 +355,8 @@ package.
 | **1.4.0** | **JBIG2 (`/JBIG2Decode`) and JPEG 2000 (`/JPXDecode`) pure-BCL decoders.** JBIG2 generic/symbol/text regions (validated bit-for-bit vs. a reference decoder); JPEG 2000 full pipeline — packet decode, EBCOT, 5/3 reversible (bit-exact) and 9/7 irreversible wavelets, RCT/ICT. Both feed the OCR pipeline | Released |
 | **1.5.0** | **Color pipeline (`ZeroDep.Color`)** — normalizes decoded images to RGB by applying the PDF colour space: DeviceGray/RGB/CMYK, Indexed (palette), ICCBased (component count + alternate), CalGray/CalRGB/Lab, and Separation/DeviceN, with a PDF function evaluator and `/Decode` + bit-depth handling. `PdfAnalyzer.ExtractColorImages` makes extracted images render in true colour. Validated vs. a reference renderer on the real corpus (Indexed/Gray bit-exact; CMYK/Separation within tolerance) | Released |
 | **1.6.0** | **Per-page structural classification** — a content class per page (digital-text / form / table-or-complex hint / scanned / mixed / empty) with confidence and the underlying signals, on `DocumentAnalysis.Pages` and in the JSON, for callers that process pages selectively; the document category rolls up from the page classes. Validated on the real corpus: zero dangerous misclassifications, deterministic, no crashes | Released |
-| **2.0.0** (current) | **Font program parsing & glyph rasterization** (`ZeroDep.Fonts` / `ZeroDep.Raster`) — parse embedded TrueType / CFF (incl. CID-keyed) / Type 1 programs to a common outline and scan-convert to anti-aliased coverage bitmaps; unified `FontProgram` facade. Outlines match FreeType/fontTools 100% on the corpus; AA fidelity RMSE ≈ 0.01 vs FreeType; no-crash across the embedded-font corpus. A full TrueType hinting bytecode interpreter ships **experimental / opt-in** with a safe fallback. Embedded fonts only | Released |
-| 2.1.0 | **Per-page text-decode trust signal** — a deterministic `[0,1]` `TextDecodeConfidence` on `PageSignals` estimating how much of a page's text decoded via an authoritative `/ToUnicode` / standard encoding vs a fallback/guess, so callers can abstain from a confidently-wrong text layer (distinct from classification confidence) | Planned |
+| **2.0.0** | **Font program parsing & glyph rasterization** (`ZeroDep.Fonts` / `ZeroDep.Raster`) — parse embedded TrueType / CFF (incl. CID-keyed) / Type 1 programs to a common outline and scan-convert to anti-aliased coverage bitmaps; unified `FontProgram` facade. Outlines match FreeType/fontTools 100% on the corpus; AA fidelity RMSE ≈ 0.01 vs FreeType; no-crash across the embedded-font corpus. A full TrueType hinting bytecode interpreter ships **experimental / opt-in** with a safe fallback. Embedded fonts only | Released |
+| **2.1.0** (current) | **Per-page text-decode trust signal** — a deterministic `[0,1]` `TextDecodeConfidence` on `PageSignals` estimating how much of a page's text decoded via an authoritative `/ToUnicode` / standard encoding vs a blind guess on a symbolic font, so callers can abstain from a confidently-wrong text layer (distinct from classification confidence). Validated on the real corpus: sharply bimodal, deterministic, no crashes | Released |
 | 2.2.0 | Full page rendering — colour fill + alpha compositing over the glyph/image layers; hinting hardened to broad FreeType parity | Planned |
 
 ## Contributing

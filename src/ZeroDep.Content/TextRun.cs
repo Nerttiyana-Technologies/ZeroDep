@@ -3,7 +3,8 @@ namespace ZeroDep.Content;
 /// <summary>A run of shown text with its device-space origin, advance width, and text state.</summary>
 internal sealed class TextRun
 {
-    public TextRun(string text, double x, double y, double width, double fontSize, int renderMode)
+    public TextRun(string text, double x, double y, double width, double fontSize, int renderMode,
+        int authoritativeChars, int fallbackChars, int unmappedChars)
     {
         Text = text;
         X = x;
@@ -11,6 +12,9 @@ internal sealed class TextRun
         Width = width;
         FontSize = fontSize;
         RenderMode = renderMode;
+        AuthoritativeChars = authoritativeChars;
+        FallbackChars = fallbackChars;
+        UnmappedChars = unmappedChars;
     }
 
     /// <summary>The decoded text.</summary>
@@ -33,4 +37,13 @@ internal sealed class TextRun
 
     /// <summary>True when drawn invisibly (Tr = 3) — the OCR/searchable layer.</summary>
     public bool IsOcrLayer => RenderMode == 3;
+
+    /// <summary>Glyphs decoded via an authoritative map (ToUnicode / named encoding / Differences).</summary>
+    public int AuthoritativeChars { get; }
+
+    /// <summary>Glyphs decoded by a blind standard-encoding guess.</summary>
+    public int FallbackChars { get; }
+
+    /// <summary>Glyphs with no usable mapping (emitted empty / non-printable).</summary>
+    public int UnmappedChars { get; }
 }

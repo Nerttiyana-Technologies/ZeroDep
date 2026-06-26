@@ -6,8 +6,11 @@ namespace ZeroDep.Abstractions;
 /// <summary>The complete structural analysis of a PDF: images, text, form, and coverage manifest.</summary>
 public sealed class DocumentAnalysis
 {
-    /// <summary>The output schema version. <c>1.1</c> adds the per-page <see cref="Pages"/> classification.</summary>
-    public string SchemaVersion { get; init; } = "1.1";
+    /// <summary>
+    /// The output schema version. <c>1.1</c> adds the per-page <see cref="Pages"/> classification; <c>1.2</c>
+    /// adds <c>signals.textDecodeConfidence</c> (the per-page text-decode trust signal, ADR-0007).
+    /// </summary>
+    public string SchemaVersion { get; init; } = "1.2";
 
     /// <summary>Whether the document was processed or rejected.</summary>
     public DocumentStatus Status { get; init; } = DocumentStatus.Processed;

@@ -150,6 +150,7 @@ public static class DocumentJson
             w.Property("rulingLineCount").Value(signals.RulingLineCount);
             w.Property("columnAlignmentScore").Value(signals.ColumnAlignmentScore);
             w.Property("fontDistinctCount").Value(signals.FontDistinctCount);
+            w.Property("textDecodeConfidence").Value(signals.TextDecodeConfidence);
             w.EndObject();
             w.EndObject();
         }
