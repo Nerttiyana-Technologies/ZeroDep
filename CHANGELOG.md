@@ -30,7 +30,7 @@ All notable changes to **ZeroDep** are documented here. The format follows
   twilight zone and phantom points. Available via `GetHintedGlyph` / `GlyphRenderer.Render(hinted: true)`.
   It **executes the corpus without faults and always falls back to the (validated) unhinted outline** on any
   divergence, so the default path is unaffected. Reference parity with FreeType is currently partial; broad
-  parity is tracked for 2.1.0.
+  parity is tracked for 2.2.0.
 
 ### Validation
 
@@ -289,4 +289,5 @@ dependency-free.
 - **1.4.0** — JBIG2 and JPX (JPEG 2000) decoders.
 - **1.5.0** — color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC).
 - **2.0.0** — font program parsing & glyph rasterization.
-- **2.1.0** — full page rendering.
+- **2.1.0** — per-page text-decode trust signal.
+- **2.2.0** — full page rendering.
