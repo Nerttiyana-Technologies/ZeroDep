@@ -4,6 +4,26 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.6.0 — 2026-06-26
+
+### Added
+
+- **Per-page structural classification.** Each page is now classified into a content-free
+  `PageContentClass` — `DigitalText`, `FormPage`, `TableOrComplexLayout` (a routing hint), `ScannedImageOnly`,
+  `ScannedWithOcr`, `Mixed`, or `Empty` — with a 0–1 confidence and the deterministic `PageSignals` behind
+  it (text-run count, text coverage, widget count, image-dominance, OCR-layer, min image DPI, ruling-line
+  count, column-alignment score, distinct-font count). Surfaced on `DocumentAnalysis.Pages` and in the JSON
+  (`pages[]`); `schemaVersion` → **1.1**. New public types in `ZeroDep.Abstractions`: `PageContentClass`,
+  `PageSignals`, `PageClassification`.
+- **Gather-then-classify rules** (no short-circuit): a form page with a non-widget table escalates to
+  `Mixed` (never silently fast-laned as `FormPage`); a faint scan that yields nothing is a low-confidence
+  scanned class, not `Empty`; ties bias to the safer (more-work) class. `DocumentClassifier.ClassifyPages`
+  rolls the page classes up to a document category.
+- **Ruling-line & distinct-font signals** from the content stream (`ContentInterpreter`): axis-aligned path
+  segments (excluding background/shading fills) and `Tf` font selections, gathered in the existing text pass.
+- **Validated** on the real corpus (600 PDFs / 23,015 pages): zero dangerous misclassifications
+  (image-only/scanned never labelled text/form), deterministic across repeat runs, and no crashes.
+
 ## 1.5.0 — 2026-06-26
 
 ### Added

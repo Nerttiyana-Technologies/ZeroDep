@@ -30,14 +30,29 @@ public sealed class DocumentJsonTests
             {
                 new CoverageItem { Id = "t0", Kind = "text", Value = "hello", Page = 0, Bounds = new BoundingBox(1, 2, 3, 4) },
             },
+            Pages = new[]
+            {
+                new PageClassification
+                {
+                    PageIndex = 0,
+                    Class = PageContentClass.DigitalText,
+                    Confidence = 0.9,
+                    Signals = new PageSignals { TextRunCount = 12, RulingLineCount = 3, FontDistinctCount = 2, TextCoverageFraction = 0.25 },
+                },
+            },
         };
 
         string json = DocumentJson.Write(analysis, indent: true);
 
         using JsonDocument doc = JsonDocument.Parse(json); // valid JSON is the primary assertion
         JsonElement root = doc.RootElement;
-        Assert.Equal("1.0", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("1.1", root.GetProperty("schemaVersion").GetString());
         Assert.Equal(2, root.GetProperty("pageCount").GetInt32());
+
+        JsonElement page = root.GetProperty("pages")[0];
+        Assert.Equal("DigitalText", page.GetProperty("class").GetString());
+        Assert.Equal(0.9, page.GetProperty("confidence").GetDouble());
+        Assert.Equal(3, page.GetProperty("signals").GetProperty("rulingLineCount").GetInt32());
 
         JsonElement image = root.GetProperty("images")[0];
         Assert.Equal(50, image.GetProperty("effectiveDpi").GetDouble());

@@ -131,6 +131,30 @@ public static class DocumentJson
         }
         w.EndArray();
 
+        w.Property("pages").BeginArray();
+        foreach (PageClassification page in analysis.Pages)
+        {
+            PageSignals signals = page.Signals;
+            w.BeginObject();
+            w.Property("index").Value(page.PageIndex);
+            w.Property("class").Value(page.Class.ToString());
+            w.Property("confidence").Value(page.Confidence);
+            w.Property("signals").BeginObject();
+            w.Property("textRunCount").Value(signals.TextRunCount);
+            w.Property("textCoverageFraction").Value(signals.TextCoverageFraction);
+            w.Property("hasAcroFormWidgets").Value(signals.HasAcroFormWidgets);
+            w.Property("widgetCount").Value(signals.WidgetCount);
+            w.Property("isImageOnly").Value(signals.IsImageOnly);
+            w.Property("ocrLayerPresent").Value(signals.OcrLayerPresent);
+            w.Property("minImageDpi").Value(signals.MinImageDpi);
+            w.Property("rulingLineCount").Value(signals.RulingLineCount);
+            w.Property("columnAlignmentScore").Value(signals.ColumnAlignmentScore);
+            w.Property("fontDistinctCount").Value(signals.FontDistinctCount);
+            w.EndObject();
+            w.EndObject();
+        }
+        w.EndArray();
+
         w.EndObject();
         return w.ToString();
     }

@@ -28,8 +28,9 @@ internal static class DocumentAnalyzer
 
             SecurityInfo security = BuildSecurity(document);
             IReadOnlyList<ImageDpiInfo> images = DpiAnalyzer.Analyze(document, dpiThreshold);
-            IReadOnlyList<TextRunInfo> textRuns = TextAnalyzer.Analyze(document);
+            IReadOnlyList<TextRunInfo> textRuns = TextAnalyzer.AnalyzeWithStructure(document, out IReadOnlyList<PageStructure> pageStructures);
             AcroFormReport form = AcroFormAnalyzer.Analyze(document);
+            IReadOnlyList<PageClassification> pages = PageClassifier.Classify(document, textRuns, images, form, pageStructures);
 
             return new DocumentAnalysis
             {
@@ -41,6 +42,7 @@ internal static class DocumentAnalyzer
                 Form = form,
                 Coverage = BuildCoverage(textRuns, form),
                 ImageAreaFraction = ComputeImageAreaFraction(document, images),
+                Pages = pages,
             };
         }
         catch (PdfSyntaxException ex)
