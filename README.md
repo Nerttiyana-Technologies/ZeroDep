@@ -55,7 +55,7 @@ zero-dependency promise while still answering the questions that matter for docu
 | Parse xref tables and streams, object streams, `/Prev` chains | Rasterize pages to bitmaps |
 | Validate integrity and reject corrupted files | Salvage/repair broken files |
 | Decrypt the standard security handler (RC4/AES-128/AES-256) | Public-key / certificate security handlers |
-| Decode `/FlateDecode`, `/LZWDecode`, ASCII, and `/DCTDecode` (JPEG) to pixels | Decode `/CCITTFaxDecode`, `/JBIG2Decode` *pixels* (planned) |
+| Decode `/FlateDecode`, `/LZWDecode`, ASCII, `/DCTDecode` (JPEG), `/CCITTFaxDecode`, `/JBIG2Decode`, and `/JPXDecode` (JPEG 2000) to pixels | Color management (ICC, Indexed palettes, separations) |
 | Read image `/Width`, `/Height`, `/BitsPerComponent` | Rasterize whole pages (vector + text + image compositing) |
 | Interpret content-stream operators for text and placement | Execute path/shading/vector rendering |
 | Resolve `/ToUnicode` to UTF-8 | Embed, subset, or rasterize fonts |
@@ -314,7 +314,7 @@ bytes → lexer → object resolver → security/decryption → filters
 | Integrity validator | Pre-flight accept/reject gate (no salvage) |
 | Object resolver | Xref tables + streams, object streams, indirect refs, `/Prev` chains |
 | Security | Standard-handler key derivation and per-object decryption |
-| Filters | Flate, LZW, ASCIIHex/85, RunLength, predictors; full JPEG (`/DCTDecode`) and CCITT (`/CCITTFaxDecode`, Group 3/4) decode; metadata-only passthrough for JBIG2 |
+| Filters | Flate, LZW, ASCIIHex/85, RunLength, predictors; full JPEG (`/DCTDecode`), CCITT (`/CCITTFaxDecode`, Group 3/4), JBIG2 (`/JBIG2Decode`), and JPEG 2000 (`/JPXDecode`) decode |
 | Document model | Catalog, page tree, resources, fonts, AcroForm |
 | Content interpreter | Text and image-placement operator state machine |
 | Feature engines | DPI, text/OCR, forms |
@@ -332,8 +332,8 @@ package.
 | **1.1.0** | **JPEG (`/DCTDecode`) pure-BCL decode** — baseline, extended-sequential, progressive, and CMYK/YCCK. Gives OCR real pixels and validates declared vs. actual image dimensions | Released |
 | **1.2.0** | **Text from images (OCR)** — opt-in, dependency-free `ZeroDep.Ocr` with a pluggable `IOcrEngine`; recovers text from raster pages with no embedded text layer (`ScannedImageOnly` → `ScannedWithOcr`) | Released |
 | **1.2.1** | Reference engine adapters — `ZeroDep.Ocr.Tesseract` (Latin scripts) and `ZeroDep.Ocr.Paddle` (CJK), both out-of-process and dependency-free, gated on a measured accuracy benchmark | Released |
-| **1.3.0** (current) | **CCITT (`/CCITTFaxDecode`) pure-BCL decode** — Group 4, Group 3 1D & 2D — brings bi-level (fax-style) document scans into the OCR pipeline. Validated on ~5,000 corpus images | Released |
-| 1.4.0 | JBIG2 and JPX (JPEG 2000) decoders | Planned |
+| **1.3.0** | **CCITT (`/CCITTFaxDecode`) pure-BCL decode** — Group 4, Group 3 1D & 2D — brings bi-level (fax-style) document scans into the OCR pipeline. Validated on ~5,000 corpus images | Released |
+| **1.4.0** (current) | **JBIG2 (`/JBIG2Decode`) and JPEG 2000 (`/JPXDecode`) pure-BCL decoders.** JBIG2 generic/symbol/text regions (validated bit-for-bit vs. a reference decoder); JPEG 2000 full pipeline — packet decode, EBCOT, 5/3 reversible (bit-exact) and 9/7 irreversible wavelets, RCT/ICT. Both feed the OCR pipeline | Released |
 | 1.5.0 | Color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC) | Planned |
 | 2.0.0 | Font program parsing & glyph rasterization | Planned |
 | 2.1.0 | Full page rendering | Planned |
