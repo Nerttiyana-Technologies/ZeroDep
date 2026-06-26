@@ -7,6 +7,8 @@
     <ProjectReference Include="..\ZeroDep.Content\ZeroDep.Content.csproj" />
     <ProjectReference Include="..\ZeroDep.Model\ZeroDep.Model.csproj" />
     <ProjectReference Include="..\ZeroDep.Objects\ZeroDep.Objects.csproj" />
+    <ProjectReference Include="..\ZeroDep.Filters\ZeroDep.Filters.csproj" />
+    <ProjectReference Include="..\ZeroDep.Color\ZeroDep.Color.csproj" />
     <ProjectReference Include="..\ZeroDep.Validation\ZeroDep.Validation.csproj" />
     <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
   </ItemGroup>

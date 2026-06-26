@@ -55,7 +55,7 @@ zero-dependency promise while still answering the questions that matter for docu
 | Parse xref tables and streams, object streams, `/Prev` chains | Rasterize pages to bitmaps |
 | Validate integrity and reject corrupted files | Salvage/repair broken files |
 | Decrypt the standard security handler (RC4/AES-128/AES-256) | Public-key / certificate security handlers |
-| Decode `/FlateDecode`, `/LZWDecode`, ASCII, `/DCTDecode` (JPEG), `/CCITTFaxDecode`, `/JBIG2Decode`, and `/JPXDecode` (JPEG 2000) to pixels | Color management (ICC, Indexed palettes, separations) |
+| Decode `/FlateDecode`, `/LZWDecode`, ASCII, `/DCTDecode` (JPEG), `/CCITTFaxDecode`, `/JBIG2Decode`, and `/JPXDecode` (JPEG 2000) to pixels, and normalize them to RGB through the PDF colour space (Device/Indexed/ICCBased/Lab/Separation) | Full ICC colour management (a CMM with rendering intents / print-accurate output) |
 | Read image `/Width`, `/Height`, `/BitsPerComponent` | Rasterize whole pages (vector + text + image compositing) |
 | Interpret content-stream operators for text and placement | Execute path/shading/vector rendering |
 | Resolve `/ToUnicode` to UTF-8 | Embed, subset, or rasterize fonts |
@@ -333,8 +333,9 @@ package.
 | **1.2.0** | **Text from images (OCR)** — opt-in, dependency-free `ZeroDep.Ocr` with a pluggable `IOcrEngine`; recovers text from raster pages with no embedded text layer (`ScannedImageOnly` → `ScannedWithOcr`) | Released |
 | **1.2.1** | Reference engine adapters — `ZeroDep.Ocr.Tesseract` (Latin scripts) and `ZeroDep.Ocr.Paddle` (CJK), both out-of-process and dependency-free, gated on a measured accuracy benchmark | Released |
 | **1.3.0** | **CCITT (`/CCITTFaxDecode`) pure-BCL decode** — Group 4, Group 3 1D & 2D — brings bi-level (fax-style) document scans into the OCR pipeline. Validated on ~5,000 corpus images | Released |
-| **1.4.0** (current) | **JBIG2 (`/JBIG2Decode`) and JPEG 2000 (`/JPXDecode`) pure-BCL decoders.** JBIG2 generic/symbol/text regions (validated bit-for-bit vs. a reference decoder); JPEG 2000 full pipeline — packet decode, EBCOT, 5/3 reversible (bit-exact) and 9/7 irreversible wavelets, RCT/ICT. Both feed the OCR pipeline | Released |
-| 1.5.0 | Color pipeline (DeviceRGB/Gray/CMYK, Indexed, ICC) | Planned |
+| **1.4.0** | **JBIG2 (`/JBIG2Decode`) and JPEG 2000 (`/JPXDecode`) pure-BCL decoders.** JBIG2 generic/symbol/text regions (validated bit-for-bit vs. a reference decoder); JPEG 2000 full pipeline — packet decode, EBCOT, 5/3 reversible (bit-exact) and 9/7 irreversible wavelets, RCT/ICT. Both feed the OCR pipeline | Released |
+| **1.5.0** (current) | **Color pipeline (`ZeroDep.Color`)** — normalizes decoded images to RGB by applying the PDF colour space: DeviceGray/RGB/CMYK, Indexed (palette), ICCBased (component count + alternate), CalGray/CalRGB/Lab, and Separation/DeviceN, with a PDF function evaluator and `/Decode` + bit-depth handling. `PdfAnalyzer.ExtractColorImages` makes extracted images render in true colour. Validated vs. a reference renderer on the real corpus (Indexed/Gray bit-exact; CMYK/Separation within tolerance) | Released |
+| 1.6.0 | Per-page structural classification — a content class per page (digital-text / form / table-or-complex hint / scanned) plus the underlying signals, for callers that process pages selectively; document status becomes a page roll-up | Planned |
 | 2.0.0 | Font program parsing & glyph rasterization | Planned |
 | 2.1.0 | Full page rendering | Planned |
 

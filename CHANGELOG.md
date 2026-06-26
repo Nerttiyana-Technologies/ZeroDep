@@ -4,6 +4,28 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.0 — 2026-06-26
+
+### Added
+
+- **Pure-BCL colour pipeline (`ZeroDep.Color`)** — normalizes decoded image samples to RGB by applying the
+  PDF colour space: **DeviceGray/RGB/CMYK**, **Indexed** (palette), **ICCBased** (pragmatic, by component
+  count + `/Alternate`), **CalGray/CalRGB**, **Lab**, and **Separation/DeviceN** (tint transform). Honours
+  `/BitsPerComponent` (1/2/4/8/16, row-aligned) and the `/Decode` array. Includes a **PDF function
+  evaluator** (`PdfFunction`) for function types 0/2/3/4 (the type-4 PostScript calculator). New public
+  types in `ZeroDep.Color`: `PdfColorSpace`, `ColorConverter`, `PdfFunction`. CMYK uses the Adobe-style
+  polynomial. Output is "correct-enough" sRGB (not a colour-managed CMM — by design).
+- **Colour-correct image extraction** — `PdfAnalyzer.ExtractColorImages` decodes embedded images to RGB (or
+  grayscale) over the pure-BCL decoders (JPEG, CCITT, JBIG2, JPEG 2000, and Flate/LZW raster), applying the
+  colour space and `/Decode`. This makes Indexed images render in true palette colour (closing a gap from
+  1.4.0) and brings CMYK/Lab/Separation raster into correct colour. New public type: `ColorImage`.
+  `JpegDecoder.Decode(data, preserveCmyk)` can return 4-component CMYK for colour-managed callers.
+- **Image colour metadata** — `PdfImageInfo` now surfaces `BitsPerComponent`, `ColorSpaceFamily`,
+  `ColorComponents`, `Decode`, and `HasSoftMask`.
+- **Validated** against poppler `pdfimages` on the real corpus: Indexed and DeviceGray **bit-exact**,
+  DeviceRGB exact, DeviceCMYK and Separation within a small tolerance (formula differences only), with no
+  inverted output.
+
 ## 1.4.0 — 2026-06-26
 
 ### Added

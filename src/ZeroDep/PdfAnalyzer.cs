@@ -54,4 +54,14 @@ public static class PdfAnalyzer
     /// <param name="password">Password for an encrypted document (empty/default if null).</param>
     public static IReadOnlyList<PdfImageInfo> ExtractImages(Stream stream, string? password = null)
         => ImageExtractor.Extract(stream, password);
+
+    /// <summary>
+    /// Decodes embedded images to colour-correct RGB (or grayscale), applying each image's PDF colour space
+    /// — DeviceGray/RGB/CMYK, Indexed (palette), ICCBased, CalGray/CalRGB/Lab, Separation/DeviceN — over
+    /// the pure-BCL image decoders (JPEG, CCITT, JBIG2, JPEG 2000, Flate/LZW raster) (Feature: colour pipeline).
+    /// </summary>
+    /// <param name="stream">A readable PDF stream.</param>
+    /// <param name="password">Password for an encrypted document (empty/default if null).</param>
+    public static IReadOnlyList<ColorImage> ExtractColorImages(Stream stream, string? password = null)
+        => ColorImageDecoder.Extract(stream, password);
 }
