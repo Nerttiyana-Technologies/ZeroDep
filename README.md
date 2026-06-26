@@ -47,6 +47,7 @@ zero-dependency promise while still answering the questions that matter for docu
 | **Typed JSON output** | The full parsed graph as a stable, versioned JSON schema, written by a pure-BCL serializer. |
 | **Batch corpus runner** | A resumable, parallel runner over a directory tree that produces per-file results and publishable, content-free aggregate statistics. |
 | **OCR-from-image** (opt-in) | A dependency-free `ZeroDep.Ocr` package with a pluggable `IOcrEngine`: decode a scanned page's image, run any OCR engine you supply, and fold the recovered text back in tagged `OcrGenerated` with confidence — never silently mixed with embedded text. |
+| **Embedded-font parsing & glyph rasterization** (`ZeroDep.Fonts` / `ZeroDep.Raster`) | Parses every embedded font program — TrueType (`glyf`), CFF/Type1C (incl. **CID-keyed**, FDArray/FDSelect), and Type 1 (`eexec`, flex, seac) — to a common cubic/quadratic outline, and rasterizes it to an anti-aliased 8-bit coverage bitmap via an analytic scanline fill. A single `FontProgram.Load` sniffs the kind and gives glyph access by id, name, code point, or CID. Outlines match FreeType/fontTools **bit-for-bit** (100% on the corpus); AA coverage tracks FreeType within **RMSE ≈ 0.01**. A full TrueType bytecode **hinting** interpreter is included as **experimental, opt-in** (safe fallback to the unhinted outline). |
 
 ## Scope: analyze, don't render
 
@@ -167,6 +168,22 @@ Console.WriteLine($"{meta.Width}x{meta.Height}, {meta.Mode}");
 
 RasterImage image = JpegDecoder.Decode(jpeg);   // baseline, progressive, or CMYK/YCCK → RGB/grayscale
 // image.Samples is row-major, interleaved; image.Components is 1 (gray) or 3 (RGB)
+```
+
+### Rasterize a glyph from an embedded font
+
+```csharp
+using ZeroDep.Fonts;
+using ZeroDep.Raster;
+
+byte[] program = /* an embedded /FontFile, /FontFile2, or /FontFile3 stream */;
+
+FontProgram font = FontProgram.Load(program);   // sniffs TrueType / CFF / Type 1
+int gid = font.MapCodepointToGlyph('A');        // (TrueType cmap; CID fonts use GlyphIdForCid)
+
+GlyphOutline outline = font.GetGlyph(gid);       // cubic/quadratic contours, font units
+GlyphBitmap bmp = GlyphRenderer.Render(font, gid, pixelSize: 48);   // 8-bit AA coverage
+// bmp.Coverage is row-major Width*Height; bmp.Left/Top are the pen-relative placement
 ```
 
 ### Recover text from a scanned page (OCR)
@@ -318,6 +335,8 @@ bytes → lexer → object resolver → security/decryption → filters
 | Document model | Catalog, page tree, resources, fonts, AcroForm |
 | Content interpreter | Text and image-placement operator state machine |
 | Feature engines | DPI, text/OCR, forms |
+| Font programs (`ZeroDep.Fonts`) | Embedded TrueType / CFF / Type 1 / CID parsing → common outline; optional TrueType hinting VM |
+| Rasterizer (`ZeroDep.Raster`) | Bézier flattening + analytic non-zero-winding scanline fill → 8-bit AA coverage |
 | Serialization | Typed graph → versioned JSON (pure BCL) |
 
 ## Roadmap
@@ -335,9 +354,9 @@ package.
 | **1.3.0** | **CCITT (`/CCITTFaxDecode`) pure-BCL decode** — Group 4, Group 3 1D & 2D — brings bi-level (fax-style) document scans into the OCR pipeline. Validated on ~5,000 corpus images | Released |
 | **1.4.0** | **JBIG2 (`/JBIG2Decode`) and JPEG 2000 (`/JPXDecode`) pure-BCL decoders.** JBIG2 generic/symbol/text regions (validated bit-for-bit vs. a reference decoder); JPEG 2000 full pipeline — packet decode, EBCOT, 5/3 reversible (bit-exact) and 9/7 irreversible wavelets, RCT/ICT. Both feed the OCR pipeline | Released |
 | **1.5.0** | **Color pipeline (`ZeroDep.Color`)** — normalizes decoded images to RGB by applying the PDF colour space: DeviceGray/RGB/CMYK, Indexed (palette), ICCBased (component count + alternate), CalGray/CalRGB/Lab, and Separation/DeviceN, with a PDF function evaluator and `/Decode` + bit-depth handling. `PdfAnalyzer.ExtractColorImages` makes extracted images render in true colour. Validated vs. a reference renderer on the real corpus (Indexed/Gray bit-exact; CMYK/Separation within tolerance) | Released |
-| **1.6.0** (current) | **Per-page structural classification** — a content class per page (digital-text / form / table-or-complex hint / scanned / mixed / empty) with confidence and the underlying signals, on `DocumentAnalysis.Pages` and in the JSON, for callers that process pages selectively; the document category rolls up from the page classes. Validated on the real corpus: zero dangerous misclassifications, deterministic, no crashes | Released |
-| 2.0.0 | Font program parsing & glyph rasterization | Planned |
-| 2.1.0 | Full page rendering | Planned |
+| **1.6.0** | **Per-page structural classification** — a content class per page (digital-text / form / table-or-complex hint / scanned / mixed / empty) with confidence and the underlying signals, on `DocumentAnalysis.Pages` and in the JSON, for callers that process pages selectively; the document category rolls up from the page classes. Validated on the real corpus: zero dangerous misclassifications, deterministic, no crashes | Released |
+| **2.0.0** (current) | **Font program parsing & glyph rasterization** (`ZeroDep.Fonts` / `ZeroDep.Raster`) — parse embedded TrueType / CFF (incl. CID-keyed) / Type 1 programs to a common outline and scan-convert to anti-aliased coverage bitmaps; unified `FontProgram` facade. Outlines match FreeType/fontTools 100% on the corpus; AA fidelity RMSE ≈ 0.01 vs FreeType; no-crash across the embedded-font corpus. A full TrueType hinting bytecode interpreter ships **experimental / opt-in** with a safe fallback. Embedded fonts only | Released |
+| 2.1.0 | Full page rendering — colour fill + alpha compositing over the glyph/image layers; hinting hardened to broad FreeType parity | Planned |
 
 ## Contributing
 
