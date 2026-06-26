@@ -4,7 +4,7 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.4.0 — Unreleased
+## 1.4.0 — 2026-06-26
 
 ### Added
 
@@ -18,10 +18,15 @@ All notable changes to **ZeroDep** are documented here. The format follows
 - **OCR over JBIG2 scans.** `OcrImageConverter.FromJbig2` and `OcrProcessor` now recover text from
   `/JBIG2Decode` images (alongside `/DCTDecode` and `/CCITTFaxDecode`). `PdfImageInfo.Jbig2Globals`
   surfaces the decoded globals stream.
-
-### In progress
-
-- JPEG 2000 (`/JPXDecode`) decoder — targeted for this release before it ships.
+- **Pure-BCL JPEG 2000 (`/JPXDecode`) decoder.** A from-scratch decode pipeline: codestream parse (raw
+  and JP2-boxed; SIZ/COD/COC/QCD/QCC with per-tile overrides), Tier-2 packet decode with tag trees
+  (LRCP and RLCP progressions, precincts, code-blocks), Tier-1 EBCOT bit-plane coding (the three coding
+  passes, reusing the validated MQ arithmetic decoder shared with JBIG2), dequantization, the inverse
+  **5/3 reversible** and **9/7 irreversible** wavelet transforms, the inverse RCT/ICT multi-component
+  transforms, and DC level shifting. Grayscale and RGB output. New public type in `ZeroDep.Filters`:
+  `JpxDecode` (decode to a `RasterImage`).
+- **OCR over JPEG 2000 images.** `OcrImageConverter.FromJpx` and `OcrProcessor` now recover text from
+  `/JPXDecode` images (alongside `/DCTDecode`, `/CCITTFaxDecode`, and `/JBIG2Decode`).
 
 ## 1.3.0 — 2026-06-24
 

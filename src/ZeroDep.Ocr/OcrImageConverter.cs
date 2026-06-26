@@ -2,6 +2,7 @@ using System;
 using ZeroDep.Abstractions;
 using ZeroDep.Filters;
 using ZeroDep.Filters.Jbig2;
+using ZeroDep.Filters.Jpx;
 
 namespace ZeroDep.Ocr;
 
@@ -55,6 +56,18 @@ public static class OcrImageConverter
     /// <param name="dpi">The effective resolution the image is placed at, where known; 0 if unknown.</param>
     public static DecodedImage FromJbig2(byte[] data, byte[]? globals, int width, int height, int dpi = 0)
         => FromRaster(Jbig2Decode.Decode(data, globals, width, height), dpi);
+
+    /// <summary>
+    /// Decodes a JPEG 2000 (<c>/JPXDecode</c>) byte stream into a <see cref="DecodedImage"/>. Grayscale
+    /// (1-component) and colour (3-component) codestreams are returned as <see cref="PixelFormat.Gray8"/>
+    /// or <see cref="PixelFormat.Rgb24"/> respectively.
+    /// </summary>
+    /// <param name="data">The embedded <c>/JPXDecode</c> bytes (raw codestream or JP2-boxed).</param>
+    /// <param name="width">The image width (PDF <c>/Width</c>); a fallback if the codestream omits SIZ.</param>
+    /// <param name="height">The image height (PDF <c>/Height</c>); a fallback only.</param>
+    /// <param name="dpi">The effective resolution the image is placed at, where known; 0 if unknown.</param>
+    public static DecodedImage FromJpx(byte[] data, int width, int height, int dpi = 0)
+        => FromRaster(JpxDecode.Decode(data, width, height), dpi);
 
     /// <summary>Converts a decoded <see cref="RasterImage"/> into a <see cref="DecodedImage"/>.</summary>
     /// <param name="raster">The decoded raster image (1 = grayscale, 3 = RGB).</param>

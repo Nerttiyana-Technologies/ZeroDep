@@ -60,9 +60,21 @@ internal sealed class JpxCod
 
     public int CodeBlockHeight { get; init; }
 
+    /// <summary>Code-block width exponent (xcb), i.e. log2(<see cref="CodeBlockWidth"/>).</summary>
+    public int CodeBlockWidthExp { get; init; }
+
+    /// <summary>Code-block height exponent (ycb), i.e. log2(<see cref="CodeBlockHeight"/>).</summary>
+    public int CodeBlockHeightExp { get; init; }
+
     public int CodeBlockStyle { get; init; }
 
     public bool Reversible { get; init; }       // true = 5/3, false = 9/7
+
+    /// <summary>SOP marker segments may be present before packets (Scod bit 1).</summary>
+    public bool UseSop { get; init; }
+
+    /// <summary>EPH marker may terminate packet headers (Scod bit 2).</summary>
+    public bool UseEph { get; init; }
 
     /// <summary>Per-resolution precinct (PPx, PPy) exponents, or null when default (max) precincts.</summary>
     public (int X, int Y)[]? PrecinctSizes { get; init; }
@@ -89,6 +101,18 @@ internal sealed class JpxTilePart
     public int DataLength { get; init; }
 }
 
+/// <summary>Per-tile coding overrides parsed from a tile-part header (COD/QCD/COC/QCC).</summary>
+internal sealed class JpxTileCoding
+{
+    public JpxCod? Cod { get; set; }
+
+    public JpxQcd? Qcd { get; set; }
+
+    public Dictionary<int, JpxCod> ComponentCod { get; } = new Dictionary<int, JpxCod>();
+
+    public Dictionary<int, JpxQcd> ComponentQcd { get; } = new Dictionary<int, JpxQcd>();
+}
+
 /// <summary>The parsed JPEG 2000 codestream: main-header parameters plus the tile-part data ranges.</summary>
 internal sealed class JpxImage
 {
@@ -100,12 +124,60 @@ internal sealed class JpxImage
 
     public JpxQcd Qcd { get; init; } = new JpxQcd();
 
+    /// <summary>Main-header per-component coding overrides (COC).</summary>
+    public Dictionary<int, JpxCod> ComponentCod { get; } = new Dictionary<int, JpxCod>();
+
+    /// <summary>Main-header per-component quantization overrides (QCC).</summary>
+    public Dictionary<int, JpxQcd> ComponentQcd { get; } = new Dictionary<int, JpxQcd>();
+
+    /// <summary>Per-tile coding overrides (keyed by tile index).</summary>
+    public Dictionary<int, JpxTileCoding> Tiles { get; } = new Dictionary<int, JpxTileCoding>();
+
     public List<JpxTilePart> TileParts { get; } = new List<JpxTilePart>();
+
+    /// <summary>Resolves the effective coding style for a (tile, component): tile-COC, tile-COD, main-COC, main-COD.</summary>
+    public JpxCod CodFor(int tileIndex, int component)
+    {
+        if (Tiles.TryGetValue(tileIndex, out JpxTileCoding? t))
+        {
+            if (t.ComponentCod.TryGetValue(component, out JpxCod? tc))
+            {
+                return tc;
+            }
+
+            if (t.Cod is { } td)
+            {
+                return td;
+            }
+        }
+
+        return ComponentCod.TryGetValue(component, out JpxCod? mc) ? mc : Cod;
+    }
+
+    /// <summary>Resolves the effective quantization for a (tile, component): tile-QCC, tile-QCD, main-QCC, main-QCD.</summary>
+    public JpxQcd QcdFor(int tileIndex, int component)
+    {
+        if (Tiles.TryGetValue(tileIndex, out JpxTileCoding? t))
+        {
+            if (t.ComponentQcd.TryGetValue(component, out JpxQcd? tq))
+            {
+                return tq;
+            }
+
+            if (t.Qcd is { } td)
+            {
+                return td;
+            }
+        }
+
+        return ComponentQcd.TryGetValue(component, out JpxQcd? mq) ? mq : Qcd;
+    }
 }
 
 /// <summary>
-/// Parses a JPEG 2000 codestream (raw or JP2-boxed) into a <see cref="JpxImage"/>: SIZ/COD/QCD main
-/// header plus tile-part data ranges (ITU-T T.800). Entropy decoding happens in later stages.
+/// Parses a JPEG 2000 codestream (raw or JP2-boxed) into a <see cref="JpxImage"/>: the SIZ/COD/QCD main
+/// header (plus COC/QCC overrides and per-tile coding) and the tile-part data ranges (ITU-T T.800).
+/// Entropy decoding happens in <see cref="JpxDecode"/>.
 /// </summary>
 internal static class JpxCodestream
 {
@@ -115,7 +187,6 @@ internal static class JpxCodestream
         int p = 0;
         if (U16(data, p) != 0xFF4F)
         {
-            // tolerate leading bytes before SOC
             int soc = IndexOf(data, 0xFF4F);
             if (soc < 0)
             {
@@ -130,18 +201,25 @@ internal static class JpxCodestream
         JpxSiz? siz = null;
         JpxCod? cod = null;
         JpxQcd? qcd = null;
+        var compCod = new Dictionary<int, JpxCod>();
+        var compQcd = new Dictionary<int, JpxQcd>();
+        var tiles = new Dictionary<int, JpxTileCoding>();
         var tileParts = new List<JpxTilePart>();
+        int csiz = 0;
 
         while (p + 2 <= data.Length)
         {
             int marker = U16(data, p);
             if (marker == 0xFF90)
             {
-                // SOT — tile-part header, then SOD, then packed data up to the tile-part length.
+                // SOT — tile-part header. Parse override markers up to SOD, then record the body range.
                 int lsot = U16(data, p + 2);
                 int isot = U16(data, p + 4);
                 long psot = U32(data, p + 6);
-                int sod = FindSod(data, p + 2 + lsot);
+
+                var tileCoding = GetOrAdd(tiles, isot);
+                int hp = p + 2 + lsot;
+                int sod = ParseTileHeader(data, hp, csiz, tileCoding);
                 if (sod < 0)
                 {
                     break;
@@ -181,15 +259,30 @@ internal static class JpxCodestream
             {
                 case 0xFF51:
                     siz = ParseSiz(data, seg);
+                    csiz = siz.Components.Length;
                     break;
                 case 0xFF52:
                     cod = ParseCod(data, seg);
                     break;
+                case 0xFF53:
+                {
+                    int comp = ReadComponentIndex(data, seg, csiz, out int after);
+                    compCod[comp] = ParseCoc(data, after, cod);
+                    break;
+                }
+
                 case 0xFF5C:
                     qcd = ParseQcd(data, seg, length);
                     break;
+                case 0xFF5D:
+                {
+                    int comp = ReadComponentIndex(data, seg, csiz, out int after);
+                    compQcd[comp] = ParseQcc(data, after, seg + length);
+                    break;
+                }
+
                 default:
-                    break; // COC/QCC/RGN/POC/COM/TLM/PLM/PPM etc. — handled in later stages as needed
+                    break; // RGN/POC/COM/TLM/PLM/PPM etc. — handled in later stages as needed
             }
 
             p += 2 + length;
@@ -202,8 +295,74 @@ internal static class JpxCodestream
             Cod = cod ?? new JpxCod(),
             Qcd = qcd ?? new JpxQcd(),
         };
+        foreach (KeyValuePair<int, JpxCod> kv in compCod)
+        {
+            image.ComponentCod[kv.Key] = kv.Value;
+        }
+
+        foreach (KeyValuePair<int, JpxQcd> kv in compQcd)
+        {
+            image.ComponentQcd[kv.Key] = kv.Value;
+        }
+
+        foreach (KeyValuePair<int, JpxTileCoding> kv in tiles)
+        {
+            image.Tiles[kv.Key] = kv.Value;
+        }
+
         image.TileParts.AddRange(tileParts);
         return image;
+    }
+
+    // Parses tile-part header markers (between the SOT segment and SOD) into per-tile overrides.
+    // Returns the offset of the SOD marker, or -1 if none found.
+    private static int ParseTileHeader(byte[] d, int p, int csiz, JpxTileCoding tile)
+    {
+        while (p + 2 <= d.Length)
+        {
+            int marker = U16(d, p);
+            if (marker == 0xFF93)
+            {
+                return p; // SOD
+            }
+
+            if (p + 4 > d.Length)
+            {
+                return -1;
+            }
+
+            int length = U16(d, p + 2);
+            int seg = p + 4;
+            switch (marker)
+            {
+                case 0xFF52:
+                    tile.Cod = ParseCod(d, seg);
+                    break;
+                case 0xFF53:
+                {
+                    int comp = ReadComponentIndex(d, seg, csiz, out int after);
+                    tile.ComponentCod[comp] = ParseCoc(d, after, tile.Cod);
+                    break;
+                }
+
+                case 0xFF5C:
+                    tile.Qcd = ParseQcd(d, seg, length);
+                    break;
+                case 0xFF5D:
+                {
+                    int comp = ReadComponentIndex(d, seg, csiz, out int after);
+                    tile.ComponentQcd[comp] = ParseQcc(d, after, seg + length);
+                    break;
+                }
+
+                default:
+                    break;
+            }
+
+            p += 2 + length;
+        }
+
+        return -1;
     }
 
     private static JpxSiz ParseSiz(byte[] d, int s)
@@ -245,8 +404,8 @@ internal static class JpxCodestream
         int layers = U16(d, s + 2);
         int mct = d[s + 4];
         int levels = d[s + 5];
-        int cbw = (d[s + 6] & 0x0F) + 2;
-        int cbh = (d[s + 7] & 0x0F) + 2;
+        int cbwExp = (d[s + 6] & 0x0F) + 2;
+        int cbhExp = (d[s + 7] & 0x0F) + 2;
         int cbStyle = d[s + 8];
         int transform = d[s + 9];
 
@@ -267,27 +426,74 @@ internal static class JpxCodestream
             Layers = layers,
             UseMct = mct == 1,
             DecompositionLevels = levels,
-            CodeBlockWidth = 1 << cbw,
-            CodeBlockHeight = 1 << cbh,
+            CodeBlockWidth = 1 << cbwExp,
+            CodeBlockHeight = 1 << cbhExp,
+            CodeBlockWidthExp = cbwExp,
+            CodeBlockHeightExp = cbhExp,
             CodeBlockStyle = cbStyle,
             Reversible = transform == 1,
+            UseSop = (scod & 0x02) != 0,
+            UseEph = (scod & 0x04) != 0,
+            PrecinctSizes = precincts,
+        };
+    }
+
+    // COC shares the COD body layout minus the SGcod (progression/layers/MCT) group.
+    private static JpxCod ParseCoc(byte[] d, int s, JpxCod? baseCod)
+    {
+        int scoc = d[s];
+        int levels = d[s + 1];
+        int cbwExp = (d[s + 2] & 0x0F) + 2;
+        int cbhExp = (d[s + 3] & 0x0F) + 2;
+        int cbStyle = d[s + 4];
+        int transform = d[s + 5];
+
+        (int, int)[]? precincts = null;
+        if ((scoc & 0x01) != 0)
+        {
+            precincts = new (int, int)[levels + 1];
+            for (int i = 0; i <= levels; i++)
+            {
+                int b = d[s + 6 + i];
+                precincts[i] = (b & 0x0F, (b >> 4) & 0x0F);
+            }
+        }
+
+        return new JpxCod
+        {
+            Progression = baseCod?.Progression ?? 0,
+            Layers = baseCod?.Layers ?? 1,
+            UseMct = false,
+            DecompositionLevels = levels,
+            CodeBlockWidth = 1 << cbwExp,
+            CodeBlockHeight = 1 << cbhExp,
+            CodeBlockWidthExp = cbwExp,
+            CodeBlockHeightExp = cbhExp,
+            CodeBlockStyle = cbStyle,
+            Reversible = transform == 1,
+            UseSop = baseCod?.UseSop ?? false,
+            UseEph = baseCod?.UseEph ?? false,
             PrecinctSizes = precincts,
         };
     }
 
     private static JpxQcd ParseQcd(byte[] d, int s, int length)
+        => ParseQuant(d, s, s + length - 2);
+
+    // QCC begins with the component index (already consumed); the remainder matches QCD.
+    private static JpxQcd ParseQcc(byte[] d, int s, int end) => ParseQuant(d, s, end);
+
+    private static JpxQcd ParseQuant(byte[] d, int s, int end)
     {
         int sqcd = d[s];
         int style = sqcd & 0x1F;
         int guardBits = sqcd >> 5;
         var steps = new List<(int, int)>();
         int p = s + 1;
-        int end = s + length - 2;
 
         if (style == 0)
         {
-            // no quantization: 8-bit exponents
-            while (p < end)
+            while (p < end && p < d.Length)
             {
                 steps.Add((d[p] >> 3, 0));
                 p += 1;
@@ -295,8 +501,7 @@ internal static class JpxCodestream
         }
         else
         {
-            // scalar derived (1) or expounded (2): 16-bit (exponent:5, mantissa:11)
-            while (p + 1 < end + 1 && p + 1 <= d.Length - 1 && p < end)
+            while (p + 1 < end + 1 && p + 1 <= d.Length && p < end)
             {
                 int v = U16(d, p);
                 steps.Add((v >> 11, v & 0x7FF));
@@ -307,18 +512,28 @@ internal static class JpxCodestream
         return new JpxQcd { Style = style, GuardBits = guardBits, StepSizes = steps.ToArray() };
     }
 
-    // Find SOD (0xFF93) at or after offset.
-    private static int FindSod(byte[] d, int from)
+    // COC/QCC carry a component index whose width depends on the component count (1 byte if <257, else 2).
+    private static int ReadComponentIndex(byte[] d, int s, int csiz, out int after)
     {
-        for (int i = from; i + 1 < d.Length; i++)
+        if (csiz < 257)
         {
-            if (d[i] == 0xFF && d[i + 1] == 0x93)
-            {
-                return i;
-            }
+            after = s + 1;
+            return d[s];
         }
 
-        return -1;
+        after = s + 2;
+        return U16(d, s);
+    }
+
+    private static JpxTileCoding GetOrAdd(Dictionary<int, JpxTileCoding> tiles, int index)
+    {
+        if (!tiles.TryGetValue(index, out JpxTileCoding? t))
+        {
+            t = new JpxTileCoding();
+            tiles[index] = t;
+        }
+
+        return t;
     }
 
     // If the data is a JP2/JPX box file, return the contiguous codestream (jp2c) payload; else as-is.
@@ -338,7 +553,6 @@ internal static class JpxCodestream
             long boxLen = len;
             if (len == 1)
             {
-                // 64-bit extended length
                 boxLen = ((long)U32(d, p + 8) << 32) | U32(d, p + 12);
                 headerLen = 16;
             }

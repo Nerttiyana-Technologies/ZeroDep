@@ -125,6 +125,9 @@ public static class OcrProcessor
             case "JBIG2Decode":
                 return OcrImageConverter.FromJbig2(image.EncodedData, image.Jbig2Globals, image.DeclaredWidth, image.DeclaredHeight);
 
+            case "JPXDecode":
+                return OcrImageConverter.FromJpx(image.EncodedData, image.DeclaredWidth, image.DeclaredHeight);
+
             default:
                 return null;   // other filters not yet supported
         }
