@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Raster</RootNamespace>
+    <AssemblyName>ZeroDep.Raster</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Fonts\ZeroDep.Fonts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Raster.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Analysis" />
+  </ItemGroup>
+</Project>

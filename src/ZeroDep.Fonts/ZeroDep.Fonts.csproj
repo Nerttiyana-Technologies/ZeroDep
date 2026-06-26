@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Fonts</RootNamespace>
+    <AssemblyName>ZeroDep.Fonts</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Fonts.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Raster" />
+    <InternalsVisibleTo Include="ZeroDep.Analysis" />
+  </ItemGroup>
+</Project>

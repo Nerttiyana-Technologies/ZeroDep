@@ -4,6 +4,47 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0 — 2026-06-26
+
+### Added
+
+- **Embedded font-program parsing (`ZeroDep.Fonts`).** Pure-BCL parsers for every embedded font program a
+  PDF can carry, each producing a common `GlyphOutline` (contours of line / quadratic / cubic segments in
+  font units):
+  - **TrueType** (`/FontFile2`, `glyf`) — table directory, `head`/`maxp`/`loca`/`glyf`/`hmtx`/`cmap`
+    (formats 4 & 12), simple **and** composite glyphs, left-side-bearing alignment.
+  - **CFF / Type 1C** (`/FontFile3`, bare or OpenType-`OTTO`) — INDEX/DICT structures and a full Type 2
+    charstring interpreter (local/global subrs, all curve operators, flex, hintmask, width parsing).
+  - **CID-keyed CFF** — ROS / **FDArray / FDSelect** (per-glyph private dict & local subrs) and the charset
+    CID→GID map; `CIDFontType2` reuses the `glyf` path.
+  - **Type 1** (`/FontFile`) — `eexec` + charstring decryption and a Type 1 interpreter including **flex**,
+    **hint replacement** (OtherSubrs), and the **`seac`** accented-composite operator.
+- **Glyph rasterizer (`ZeroDep.Raster`).** `GlyphRasterizer.Render` flattens Béziers to an adaptive tolerance
+  and fills with the non-zero winding rule using vertical supersampling + exact horizontal coverage, yielding
+  an 8-bit anti-aliased `GlyphBitmap` (deterministic by construction). `GlyphRenderer.Render` ties a font +
+  glyph + size into a bitmap.
+- **Unified entry point.** `FontProgram.Load` sniffs the program kind and exposes one glyph-access surface —
+  by glyph id, by name (Type 1), by code point (cmap), and by CID — plus `GetHintedGlyph`.
+- **TrueType hinting interpreter (experimental, opt-in).** A full bytecode VM — graphics state, CVT, storage,
+  `fpgm`/`prep`/glyph programs, ~200 opcodes, FreeType-compatible 26.6 / 2.14 fixed-point arithmetic,
+  twilight zone and phantom points. Available via `GetHintedGlyph` / `GlyphRenderer.Render(hinted: true)`.
+  It **executes the corpus without faults and always falls back to the (validated) unhinted outline** on any
+  divergence, so the default path is unaffected. Reference parity with FreeType is currently partial; broad
+  parity is tracked for 2.1.0.
+
+### Validation
+
+- **Outlines bit-for-bit vs references:** TrueType 269/269, CFF 321/321, Type 1 121/121, CID-CFF 94/94 — all
+  **100%** vs FreeType (`FT_LOAD_NO_SCALE`) / fontTools.
+- **AA fidelity:** 146/146 glyphs within **RMSE ≤ 0.05** (avg ≈ 0.011) of FreeType's unhinted renderer.
+- **No-crash corpus gate:** 140 embedded font programs parsed and rendered (unhinted **and** hinted) with
+  zero crashes; malformed programs isolated.
+
+### Notes
+
+- Embedded fonts only (no bundled typefaces / system-font fallback — by design, for zero-dependency and
+  licensing reasons). `ZeroDep.Fonts` and `ZeroDep.Raster` have **zero** external references.
+
 ## 1.6.0 — 2026-06-26
 
 ### Added
