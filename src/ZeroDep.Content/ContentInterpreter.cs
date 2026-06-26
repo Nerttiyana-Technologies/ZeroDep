@@ -62,7 +62,7 @@ internal sealed class ContentInterpreter
         double GlyphAdvance(Glyph g)
             => (((g.WidthEm / 1000.0) * fontSize) + charSpacing + (g.IsSpace ? wordSpacing : 0)) * (horizScale / 100.0);
 
-        void Emit(string text, double advance)
+        void Emit(string text, double advance, int auth, int fallback, int unmapped)
         {
             Matrix start = Matrix.Multiply(textMatrix, ctm);
             Matrix advancedText = Matrix.Multiply(Translate(advance, 0), textMatrix);
@@ -71,9 +71,19 @@ internal sealed class ContentInterpreter
                 Matrix end = Matrix.Multiply(advancedText, ctm);
                 double width = Hypot(end.E - start.E, end.F - start.F);
                 double size = fontSize * Hypot(start.C, start.D);
-                result.TextRuns.Add(new TextRun(text, start.E, start.F, width, size, renderMode));
+                result.TextRuns.Add(new TextRun(text, start.E, start.F, width, size, renderMode, auth, fallback, unmapped));
             }
             textMatrix = advancedText;
+        }
+
+        void Tally(Glyph g, ref int auth, ref int fallback, ref int unmapped)
+        {
+            switch (g.Tier)
+            {
+                case DecodeTier.Authoritative: auth++; break;
+                case DecodeTier.Fallback: fallback++; break;
+                default: unmapped++; break;
+            }
         }
 
         void ShowSimple(PdfString s)
@@ -81,12 +91,14 @@ internal sealed class ContentInterpreter
             if (font is null) return;
             var sb = new StringBuilder();
             double advance = 0;
+            int auth = 0, fallback = 0, unmapped = 0;
             foreach (Glyph g in font.Decode(s.ToArray()))
             {
                 sb.Append(g.Text);
                 advance += GlyphAdvance(g);
+                Tally(g, ref auth, ref fallback, ref unmapped);
             }
-            Emit(sb.ToString(), advance);
+            Emit(sb.ToString(), advance, auth, fallback, unmapped);
         }
 
         void NextLine()
@@ -236,11 +248,12 @@ internal sealed class ContentInterpreter
                     {
                         var sb = new StringBuilder();
                         double advance = 0;
+                        int auth = 0, fallback = 0, unmapped = 0;
                         foreach (PdfObject item in tjArray.Items)
                         {
                             if (item is PdfString s)
                             {
-                                foreach (Glyph g in font.Decode(s.ToArray())) { sb.Append(g.Text); advance += GlyphAdvance(g); }
+                                foreach (Glyph g in font.Decode(s.ToArray())) { sb.Append(g.Text); advance += GlyphAdvance(g); Tally(g, ref auth, ref fallback, ref unmapped); }
                             }
                             else if (item is PdfNumber num)
                             {
@@ -248,7 +261,7 @@ internal sealed class ContentInterpreter
                                 if (num.AsDouble <= -TjSpaceThreshold) sb.Append(' ');
                             }
                         }
-                        Emit(sb.ToString(), advance);
+                        Emit(sb.ToString(), advance, auth, fallback, unmapped);
                     }
                     break;
                 case "'":

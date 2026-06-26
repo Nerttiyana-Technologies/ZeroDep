@@ -19,6 +19,10 @@ internal static class PageClassifier
     private const double ColumnThreshold = 0.60;  // column-alignment score to flag table/complex (P5)
     private const double LowCoverage = 0.02;      // sparse marks → lower confidence
 
+    // Partial credit a blind standard-encoding guess earns toward decode trust (ADR-0007 §2.1); an
+    // authoritative glyph earns 1.0 and an unmapped glyph earns 0. Calibrated under Z-G6 (ADR-0007 #4).
+    private const double FallbackCredit = 0.25;
+
     public static IReadOnlyList<PageClassification> Classify(
         PdfDocument document,
         IReadOnlyList<TextRunInfo> textRuns,
@@ -74,6 +78,7 @@ internal static class PageClassifier
         int textRunCount = 0;
         bool ocrLayerPresent = false;
         double textAreaSum = 0;
+        long authChars = 0, fallbackChars = 0, unmappedChars = 0;
         if (runs is not null)
         {
             foreach (TextRunInfo run in runs)
@@ -86,6 +91,9 @@ internal static class PageClassifier
 
                 textRunCount++;
                 textAreaSum += Math.Abs(run.Width) * Math.Abs(run.FontSize);
+                authChars += run.AuthoritativeChars;
+                fallbackChars += run.FallbackChars;
+                unmappedChars += run.UnmappedChars;
             }
         }
 
@@ -128,7 +136,23 @@ internal static class PageClassifier
             RulingLineCount = structure.RulingLineCount,
             ColumnAlignmentScore = ColumnScore(runs),
             FontDistinctCount = structure.FontDistinctCount,
+            TextDecodeConfidence = DecodeConfidence(authChars, fallbackChars, unmappedChars),
         };
+    }
+
+    // (authoritative + FallbackCredit*fallback) / total, in [0,1]. A page with no decoded glyphs reports
+    // 1.0 (nothing to distrust). Fixed rounding for cross-target determinism (ADR-0007 §2.1).
+    internal static double DecodeConfidence(long auth, long fallback, long unmapped)
+    {
+        long total = auth + fallback + unmapped;
+        if (total <= 0)
+        {
+            return 1.0;
+        }
+
+        double score = (auth + (FallbackCredit * fallback)) / total;
+        score = score < 0 ? 0 : (score > 1 ? 1 : score);
+        return Math.Round(score, 4, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>The deterministic gather-then-classify decision (ADR-0003 §2.2), exposed for unit tests.</summary>

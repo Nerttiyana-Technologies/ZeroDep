@@ -36,4 +36,14 @@ public sealed class PageSignals
 
     /// <summary>Number of distinct fonts selected on the page.</summary>
     public int FontDistinctCount { get; init; }
+
+    /// <summary>
+    /// How trustworthy the page's decoded text is (0–1, rounded), independent of <see cref="PageContentClass"/>
+    /// confidence (ADR-0007). 1.0 = every glyph resolved through an authoritative map (a usable /ToUnicode, a
+    /// declared standard /Encoding, or a producer-specified /Differences name); lower means much of the text
+    /// was a blind standard-encoding guess or did not map at all — i.e. plausibly-but-wrongly decoded. A page
+    /// with no visible text reports 1.0 (nothing to distrust). Consumers can abstain from a low-trust text
+    /// layer and fall back to their own recovery path.
+    /// </summary>
+    public double TextDecodeConfidence { get; init; } = 1.0;
 }

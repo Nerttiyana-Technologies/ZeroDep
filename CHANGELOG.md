@@ -4,6 +4,24 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.0 — 2026-06-26
+
+### Added
+
+- **Per-page text-decode trust signal.** A new `PageSignals.TextDecodeConfidence` (`double`, 0–1) estimates
+  how trustworthy a page's *decoded text* is — distinct from the page's classification `Confidence`. It is
+  `1.0` when every glyph resolved through an **authoritative** map (a usable `/ToUnicode`, a declared standard
+  `/Encoding`, a producer-specified `/Differences` name, or the correct default for a non-symbolic font), and
+  drops when text was decoded by a **blind standard-encoding guess** on a symbolic font (the "plausible but
+  wrong" case) or did not map at all. This lets a consumer of the text layer **abstain on a low-trust page**
+  and fall back to its own recovery path, instead of trusting confidently-wrong characters. ZeroDep still
+  emits its best-effort text unchanged — this is a flag, not a correction. Surfaced on
+  `DocumentAnalysis.Pages[].Signals` and in the JSON (`signals.textDecodeConfidence`); `schemaVersion` → **1.2**.
+  A page with no visible text reports `1.0` (nothing to distrust).
+- **Validated** on the real corpus (600 PDFs / 16,123 born-digital text pages): the score is sharply bimodal —
+  ~96.5% of pages fully authoritative, a tight low-trust mode (~2.9%) isolating symbolic blind-guessed pages —
+  deterministic across repeat runs, with no crashes.
+
 ## 2.0.0 — 2026-06-26
 
 ### Added
