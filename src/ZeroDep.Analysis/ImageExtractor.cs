@@ -44,6 +44,7 @@ internal static class ImageExtractor
                 string? filter = FilterOf(image.Dictionary);
                 int width = IntOf(document, image.Dictionary, "Width");
                 int height = IntOf(document, image.Dictionary, "Height");
+                (string? csFamily, int csComponents) = ColorSpaceOf(document, image.Dictionary, resources, 0);
 
                 images.Add(new PdfImageInfo
                 {
@@ -54,6 +55,13 @@ internal static class ImageExtractor
                     Ccitt = filter == "CCITTFaxDecode" ? CcittOf(document, image.Dictionary, width, height) : null,
                     Jbig2Globals = filter == "JBIG2Decode" ? Jbig2GlobalsOf(document, image.Dictionary) : null,
                     EncodedData = image.GetRawBytes(),
+                    BitsPerComponent = image.Dictionary["BitsPerComponent"] is not null
+                        ? IntOf(document, image.Dictionary, "BitsPerComponent")
+                        : IntOf(document, image.Dictionary, "BPC"),
+                    ColorSpaceFamily = csFamily,
+                    ColorComponents = csComponents,
+                    Decode = DecodeOf(document, image.Dictionary),
+                    HasSoftMask = document.Resolve((image.Dictionary["SMask"] ?? PdfNull.Instance)) is PdfStream,
                 });
             }
         }
@@ -63,6 +71,108 @@ internal static class ImageExtractor
 
     private static int IntOf(PdfDocument document, PdfDictionary dict, string key)
         => document.Resolve(dict[key] ?? PdfNull.Instance) is PdfNumber n ? (int)n.AsInt64 : 0;
+
+    // Light colour-space probe: resolves the family + component count without building palettes/functions.
+    private static (string? Family, int Components) ColorSpaceOf(
+        PdfDocument document, PdfDictionary imageDict, PdfDictionary resources, int depth)
+    {
+        if (imageDict.ContainsKey("ImageMask") && document.Resolve(imageDict["ImageMask"] ?? PdfNull.Instance) is PdfBoolean { Value: true })
+        {
+            return ("ImageMask", 1);
+        }
+
+        return ProbeColorSpace(document, imageDict["ColorSpace"] ?? imageDict["CS"], resources, depth);
+    }
+
+    private static (string? Family, int Components) ProbeColorSpace(
+        PdfDocument document, PdfObject? csObj, PdfDictionary resources, int depth)
+    {
+        if (depth > 8)
+        {
+            return (null, 0);
+        }
+
+        PdfObject ro = document.Resolve(csObj ?? PdfNull.Instance);
+
+        if (ro is PdfName name)
+        {
+            switch (name.Value)
+            {
+                case "DeviceGray":
+                case "G":
+                case "CalGray":
+                    return ("DeviceGray", 1);
+                case "DeviceRGB":
+                case "RGB":
+                case "CalRGB":
+                    return ("DeviceRGB", 3);
+                case "DeviceCMYK":
+                case "CMYK":
+                    return ("DeviceCMYK", 4);
+                case "Pattern":
+                    return ("Pattern", 0);
+                default:
+                    if (document.Resolve(resources["ColorSpace"] ?? PdfNull.Instance) is PdfDictionary csDict
+                        && csDict[name.Value] is { } named)
+                    {
+                        return ProbeColorSpace(document, named, resources, depth + 1);
+                    }
+
+                    return (name.Value, 0);
+            }
+        }
+
+        if (ro is PdfArray array && array.Count > 0 && document.Resolve(array[0]) is PdfName family)
+        {
+            switch (family.Value)
+            {
+                case "ICCBased":
+                {
+                    int n = document.Resolve(array.Count > 1 ? array[1] : PdfNull.Instance) is PdfStream st
+                        && document.Resolve(st.Dictionary["N"] ?? PdfNull.Instance) is PdfNumber num
+                            ? (int)num.AsInt64
+                            : 0;
+                    return ("ICCBased", n);
+                }
+
+                case "Indexed":
+                case "I":
+                    return ("Indexed", 1);
+                case "CalGray":
+                    return ("DeviceGray", 1);
+                case "CalRGB":
+                    return ("DeviceRGB", 3);
+                case "Lab":
+                    return ("Lab", 3);
+                case "Separation":
+                    return ("Separation", 1);
+                case "DeviceN":
+                    return ("DeviceN", document.Resolve(array.Count > 1 ? array[1] : PdfNull.Instance) is PdfArray names ? names.Count : 1);
+                case "Pattern":
+                    return ("Pattern", 0);
+                default:
+                    return (family.Value, 0);
+            }
+        }
+
+        return (null, 0);
+    }
+
+    private static double[]? DecodeOf(PdfDocument document, PdfDictionary imageDict)
+    {
+        if (document.Resolve(imageDict["Decode"] ?? imageDict["D"] ?? PdfNull.Instance) is not PdfArray array)
+        {
+            return null;
+        }
+
+        var values = new double[array.Count];
+        for (int i = 0; i < array.Count; i++)
+        {
+            values[i] = document.Resolve(array[i]) is PdfNumber n ? n.AsDouble : 0.0;
+        }
+
+        return values;
+    }
 
     private static CcittParameters CcittOf(PdfDocument document, PdfDictionary imageDict, int width, int height)
     {

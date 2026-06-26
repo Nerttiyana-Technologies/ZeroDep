@@ -40,6 +40,19 @@ public static partial class JpegDecoder
         return Combine(planes.Meta, planes.Planes, planes.PlaneW, planes.HMax, planes.VMax);
     }
 
+    /// <summary>
+    /// Decodes a JPEG, optionally preserving 4-component (CMYK/YCCK) images as a 4-component CMYK raster
+    /// (true, un-inverted inks) instead of collapsing them to RGB — so a colour-managed caller can apply
+    /// the PDF colour space and <c>/Decode</c>. 1- and 3-component images are unaffected.
+    /// </summary>
+    /// <param name="data">The raw JPEG bytes (a <c>/DCTDecode</c> image stream).</param>
+    /// <param name="preserveCmyk">When true, 4-component JPEGs are returned as 4-component CMYK.</param>
+    public static RasterImage Decode(byte[] data, bool preserveCmyk)
+    {
+        PlaneSet planes = DecodeToPlanes(data);
+        return Combine(planes.Meta, planes.Planes, planes.PlaneW, planes.HMax, planes.VMax, preserveCmyk);
+    }
+
     internal static PlaneSet DecodeToPlanes(byte[] data)
     {
         if (data is null)
@@ -320,10 +333,11 @@ public static partial class JpegDecoder
         }
     }
 
-    private static RasterImage Combine(JpegMetadata meta, byte[][] planes, int[] planeW, int hMax, int vMax)
+    private static RasterImage Combine(JpegMetadata meta, byte[][] planes, int[] planeW, int hMax, int vMax, bool preserveCmyk = false)
     {
         int w = meta.Width;
         int h = meta.Height;
+        bool cmykOut = preserveCmyk && meta.ComponentCount == 4;
 
         if (meta.ComponentCount == 1)
         {
@@ -340,7 +354,8 @@ public static partial class JpegDecoder
             return new RasterImage { Width = w, Height = h, Components = 1, Samples = gray };
         }
 
-        var rgb = new byte[w * h * 3];
+        var rgb = cmykOut ? Array.Empty<byte>() : new byte[w * h * 3];
+        var cmyk = cmykOut ? new byte[w * h * 4] : Array.Empty<byte>();
         IReadOnlyList<JpegComponent> comps = meta.Components;
         for (int y = 0; y < h; y++)
         {
@@ -375,8 +390,10 @@ public static partial class JpegDecoder
                     double c2 = Sample(planes[2], planeW[2], x, y, comps[2], hMax, vMax);
                     double k = Sample(planes[3], planeW[3], x, y, comps[3], hMax, vMax);
 
-                    // Adobe (APP14 present) stores CMYK/YCCK INVERTED; un-invert to true samples.
-                    if (meta.AdobeTransform >= 0)
+                    // Adobe (APP14 present) stores CMYK/YCCK INVERTED; un-invert to true samples for the
+                    // RGB path. For the raw-CMYK output, leave samples as the codec produced them so the
+                    // PDF /Decode array (which carries the inversion for Adobe CMYK) applies downstream.
+                    if (meta.AdobeTransform >= 0 && !cmykOut)
                     {
                         c0 = 255.0 - c0;
                         c1 = 255.0 - c1;
@@ -400,11 +417,27 @@ public static partial class JpegDecoder
                         cyl = c2;
                     }
 
-                    rgb[o] = Clamp((int)Math.Round((255.0 - cc) * (255.0 - k) / 255.0));
-                    rgb[o + 1] = Clamp((int)Math.Round((255.0 - cm) * (255.0 - k) / 255.0));
-                    rgb[o + 2] = Clamp((int)Math.Round((255.0 - cyl) * (255.0 - k) / 255.0));
+                    if (cmykOut)
+                    {
+                        int o4 = ((y * w) + x) * 4;
+                        cmyk[o4] = Clamp((int)Math.Round(cc));
+                        cmyk[o4 + 1] = Clamp((int)Math.Round(cm));
+                        cmyk[o4 + 2] = Clamp((int)Math.Round(cyl));
+                        cmyk[o4 + 3] = Clamp((int)Math.Round(k));
+                    }
+                    else
+                    {
+                        rgb[o] = Clamp((int)Math.Round((255.0 - cc) * (255.0 - k) / 255.0));
+                        rgb[o + 1] = Clamp((int)Math.Round((255.0 - cm) * (255.0 - k) / 255.0));
+                        rgb[o + 2] = Clamp((int)Math.Round((255.0 - cyl) * (255.0 - k) / 255.0));
+                    }
                 }
             }
+        }
+
+        if (cmykOut)
+        {
+            return new RasterImage { Width = w, Height = h, Components = 4, Samples = cmyk };
         }
 
         return new RasterImage { Width = w, Height = h, Components = 3, Samples = rgb };

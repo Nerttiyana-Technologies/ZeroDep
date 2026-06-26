@@ -35,6 +35,24 @@ public sealed class PdfImageInfo
 
     /// <summary>The raw, still-encoded image bytes (e.g. the JPEG stream for a <c>/DCTDecode</c> image).</summary>
     public byte[] EncodedData { get; init; } = Array.Empty<byte>();
+
+    /// <summary>The image's <c>/BitsPerComponent</c>, or 0 if absent.</summary>
+    public int BitsPerComponent { get; init; }
+
+    /// <summary>
+    /// The resolved colour-space family (e.g. <c>DeviceRGB</c>, <c>DeviceCMYK</c>, <c>Indexed</c>,
+    /// <c>ICCBased</c>, <c>Separation</c>, <c>Lab</c>), or null if absent/unresolved.
+    /// </summary>
+    public string? ColorSpaceFamily { get; init; }
+
+    /// <summary>The number of colour components the colour space carries, or 0 if unknown.</summary>
+    public int ColorComponents { get; init; }
+
+    /// <summary>The image's <c>/Decode</c> array, or null if absent.</summary>
+    public double[]? Decode { get; init; }
+
+    /// <summary>Whether the image carries a soft mask (<c>/SMask</c>) — captured for later alpha compositing.</summary>
+    public bool HasSoftMask { get; init; }
 }
 
 /// <summary>

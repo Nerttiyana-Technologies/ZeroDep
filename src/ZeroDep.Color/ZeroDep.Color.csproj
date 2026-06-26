@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZeroDep.Color</RootNamespace>
+    <AssemblyName>ZeroDep.Color</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZeroDep.Abstractions\ZeroDep.Abstractions.csproj" />
+    <ProjectReference Include="..\ZeroDep.Filters\ZeroDep.Filters.csproj" />
+    <ProjectReference Include="..\ZeroDep.Objects\ZeroDep.Objects.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ZeroDep.Color.Tests" />
+    <InternalsVisibleTo Include="ZeroDep.Analysis" />
+  </ItemGroup>
+</Project>
