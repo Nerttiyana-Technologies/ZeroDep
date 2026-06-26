@@ -27,8 +27,19 @@ internal static class TextAnalyzer
 
     /// <summary>Extracts all text runs from an open document.</summary>
     public static IReadOnlyList<TextRunInfo> Analyze(PdfDocument document)
+        => AnalyzeInternal(document, out _);
+
+    /// <summary>
+    /// Extracts text runs and, alongside, the per-page structural signals gathered in the same content
+    /// pass (ruling-line count, distinct-font count) for per-page classification (ADR-0003).
+    /// </summary>
+    public static IReadOnlyList<TextRunInfo> AnalyzeWithStructure(PdfDocument document, out IReadOnlyList<PageStructure> pageStructures)
+        => AnalyzeInternal(document, out pageStructures);
+
+    private static IReadOnlyList<TextRunInfo> AnalyzeInternal(PdfDocument document, out IReadOnlyList<PageStructure> pageStructures)
     {
         var runs = new List<TextRunInfo>();
+        var structures = new List<PageStructure>();
         var interpreter = new ContentInterpreter(document.Resolve, StreamDecoder.Decode);
 
         foreach (PdfPage page in document.Pages)
@@ -61,8 +72,11 @@ internal static class TextAnalyzer
                     IsOcrLayer = run.IsOcrLayer,
                 });
             }
+
+            structures.Add(new PageStructure(page.Index, result.RulingLineCount, result.FontNames.Count));
         }
 
+        pageStructures = structures;
         return runs;
     }
 

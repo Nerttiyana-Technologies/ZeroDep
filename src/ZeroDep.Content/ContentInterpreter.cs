@@ -16,6 +16,13 @@ internal sealed class ContentInterpreter
     private const int MaxFormDepth = 12;
     private const double TjSpaceThreshold = 180.0;
 
+    // Ruling-line detection: a painted path segment counts as a "ruling line" when it is axis-aligned
+    // (near-horizontal or near-vertical) and at least this long (device points). Tuned for the table hint.
+    // Filled paths only count when they are a *thin* rectangle (a rule), not a background/shading fill.
+    private const double MinRuleLength = 24.0;
+    private const double RuleAxisEps = 0.75;
+    private const double ThinRectEps = 3.0;
+
     private readonly Func<PdfObject, PdfObject> _resolve;
     private readonly Func<PdfStream, byte[]> _decode;
 
@@ -88,6 +95,62 @@ internal sealed class ContentInterpreter
             textMatrix = lineMatrix;
         }
 
+        var pathSegments = new List<(double X0, double Y0, double X1, double Y1, bool ThinRule)>();
+        double curX = 0, curY = 0, subStartX = 0, subStartY = 0;
+
+        (double X, double Y) Device(double x, double y)
+            => (((x * ctm.A) + (y * ctm.C)) + ctm.E, ((x * ctm.B) + (y * ctm.D)) + ctm.F);
+
+        void MoveTo(double x, double y)
+        {
+            (curX, curY) = Device(x, y);
+            subStartX = curX;
+            subStartY = curY;
+        }
+
+        void LineTo(double x, double y)
+        {
+            (double dx, double dy) = Device(x, y);
+            pathSegments.Add((curX, curY, dx, dy, false));
+            curX = dx;
+            curY = dy;
+        }
+
+        void RectPath(double x, double y, double w, double h)
+        {
+            (double x0, double y0) = Device(x, y);
+            (double x1, double y1) = Device(x + w, y);
+            (double x2, double y2) = Device(x + w, y + h);
+            (double x3, double y3) = Device(x, y + h);
+            bool thin = Math.Min(Hypot(x1 - x0, y1 - y0), Hypot(x3 - x0, y3 - y0)) <= ThinRectEps;
+            pathSegments.Add((x0, y0, x1, y1, thin));
+            pathSegments.Add((x1, y1, x2, y2, thin));
+            pathSegments.Add((x2, y2, x3, y3, thin));
+            pathSegments.Add((x3, y3, x0, y0, thin));
+            curX = x0;
+            curY = y0;
+            subStartX = x0;
+            subStartY = y0;
+        }
+
+        // stroke=true counts every axis-aligned long segment; fills count only thin rectangles (rules).
+        void PaintPath(bool stroke)
+        {
+            foreach ((double X0, double Y0, double X1, double Y1, bool ThinRule) seg in pathSegments)
+            {
+                double dx = seg.X1 - seg.X0;
+                double dy = seg.Y1 - seg.Y0;
+                double len = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                bool axisAligned = Math.Abs(dx) < RuleAxisEps || Math.Abs(dy) < RuleAxisEps;
+                if (axisAligned && len >= MinRuleLength && (stroke || seg.ThinRule))
+                {
+                    result.RulingLineCount++;
+                }
+            }
+
+            pathSegments.Clear();
+        }
+
         while (true)
         {
             Token token = lexer.Next();
@@ -156,7 +219,11 @@ internal sealed class ContentInterpreter
                     if (operands.Count >= 2)
                     {
                         fontSize = NumAt(operands, 1);
-                        if (operands[operands.Count - 2] is PdfName fontName) font = ResolveFont(fontName.Value, resources, fontCache);
+                        if (operands[operands.Count - 2] is PdfName fontName)
+                        {
+                            font = ResolveFont(fontName.Value, resources, fontCache);
+                            result.FontNames.Add(fontName.Value);
+                        }
                     }
                     break;
                 case "Tr": if (operands.Count >= 1) renderMode = (int)NumAt(operands, 1); break;
@@ -191,6 +258,40 @@ internal sealed class ContentInterpreter
                 case "\"":
                     NextLine();
                     if (operands.Count >= 1 && operands[operands.Count - 1] is PdfString dquote) ShowSimple(dquote);
+                    break;
+
+                // Path construction (coordinates → device space for ruling-line detection).
+                case "m": if (operands.Count >= 2) MoveTo(NumAt(operands, 2), NumAt(operands, 1)); break;
+                case "l": if (operands.Count >= 2) LineTo(NumAt(operands, 2), NumAt(operands, 1)); break;
+                case "re": if (operands.Count >= 4) RectPath(NumAt(operands, 4), NumAt(operands, 3), NumAt(operands, 2), NumAt(operands, 1)); break;
+                case "c":
+                case "v":
+                case "y":
+                    // Bézier curves are not rulings — advance the current point to the endpoint only.
+                    if (operands.Count >= 2) (curX, curY) = Device(NumAt(operands, 2), NumAt(operands, 1));
+                    break;
+                case "h":
+                    pathSegments.Add((curX, curY, subStartX, subStartY, false));
+                    curX = subStartX;
+                    curY = subStartY;
+                    break;
+
+                // Path painting — count ruling lines, then clear the path.
+                case "S":
+                case "s":
+                case "B":
+                case "B*":
+                case "b":
+                case "b*":
+                    PaintPath(stroke: true);
+                    break;
+                case "f":
+                case "F":
+                case "f*":
+                    PaintPath(stroke: false);
+                    break;
+                case "n":
+                    pathSegments.Clear();
                     break;
 
                 default: break;
