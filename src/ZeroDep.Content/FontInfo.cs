@@ -135,6 +135,45 @@ internal sealed class FontInfo
             _namedBaseEncoding = baseEncodingName is "WinAnsiEncoding" or "MacRomanEncoding"
                 or "StandardEncoding" or "PDFDocEncoding" or "MacExpertEncoding";
         }
+
+        SpaceWidthEm = ComputeSpaceWidthEm();
+    }
+
+    /// <summary>
+    /// The advance width of the space character in em (1.0 = full em), used to detect inter-word gaps that
+    /// are encoded positionally rather than as a space glyph (ADR-0008). Falls back to 0.25 when unknown.
+    /// </summary>
+    public double SpaceWidthEm { get; }
+
+    private double ComputeSpaceWidthEm()
+    {
+        int spaceCode = -1;
+        if (_codeBytes == 1)
+        {
+            spaceCode = 32;
+        }
+        else if (_toUnicode is not null)
+        {
+            foreach (KeyValuePair<int, string> kv in _toUnicode)
+            {
+                if (kv.Value == " ")
+                {
+                    spaceCode = kv.Key;
+                    break;
+                }
+            }
+        }
+
+        if (spaceCode >= 0)
+        {
+            double em = WidthOf(spaceCode) / 1000.0;
+            if (em > 0.01 && em < 1.0)
+            {
+                return em;
+            }
+        }
+
+        return 0.25;
     }
 
     /// <summary>Decodes a shown-text byte string into glyphs.</summary>

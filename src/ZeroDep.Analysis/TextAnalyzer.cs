@@ -73,6 +73,7 @@ internal static class TextAnalyzer
                     AuthoritativeChars = run.AuthoritativeChars,
                     FallbackChars = run.FallbackChars,
                     UnmappedChars = run.UnmappedChars,
+                    SpaceWidthEm = run.SpaceWidthEm,
                 });
             }
 
@@ -86,6 +87,12 @@ internal static class TextAnalyzer
     /// <summary>Opens a PDF stream and returns a simple, line-grouped plain-text rendering.</summary>
     public static string GetPlainText(Stream stream, string? password = null) => BuildPlainText(Analyze(stream, password));
 
+    // Insert a space between runs when the positional gap exceeds this fraction of the font's space advance
+    // (ADR-0008). 0.5 catches genuine one-space gaps while staying clear of tight intra-word kerning.
+    private const double SpaceGapFraction = 0.5;
+
+    private static bool StartsWithSpace(string s) => s.Length > 0 && char.IsWhiteSpace(s[0]);
+
     /// <summary>Joins text runs into plain text by grouping per page and per baseline.</summary>
     public static string BuildPlainText(IReadOnlyList<TextRunInfo> runs)
     {
@@ -95,16 +102,28 @@ internal static class TextAnalyzer
             foreach (var line in page.GroupBy(r => Math.Round(r.Y)).OrderByDescending(g => g.Key))
             {
                 double? previousRight = null;
+                double previousSpace = 0.25;
+                double previousFontSize = 0;
+                bool previousEndsWithSpace = false;
                 foreach (TextRunInfo run in line.OrderBy(r => r.X))
                 {
-                    if (previousRight.HasValue)
+                    if (previousRight.HasValue && !previousEndsWithSpace && !StartsWithSpace(run.Text))
                     {
                         double gap = run.X - previousRight.Value;
-                        double threshold = 0.25 * (run.FontSize > 0 ? run.FontSize : 1);
+                        // A space is encoded positionally when the gap exceeds a fraction of the font's own
+                        // space advance (ADR-0008). The font space width is the right yardstick — a flat
+                        // 0.25*FontSize wrongly exceeds narrow space widths and drops genuine word breaks.
+                        double fontSize = previousFontSize > 0 ? previousFontSize : (run.FontSize > 0 ? run.FontSize : 1);
+                        double spaceEm = previousSpace > 0 ? previousSpace : 0.25;
+                        double threshold = SpaceGapFraction * spaceEm * fontSize;
                         if (gap > threshold) sb.Append(' ');
                     }
+
                     sb.Append(run.Text);
                     previousRight = run.X + run.Width;
+                    previousSpace = run.SpaceWidthEm;
+                    previousFontSize = run.FontSize;
+                    previousEndsWithSpace = run.Text.Length > 0 && char.IsWhiteSpace(run.Text[run.Text.Length - 1]);
                 }
                 sb.Append('\n');
             }

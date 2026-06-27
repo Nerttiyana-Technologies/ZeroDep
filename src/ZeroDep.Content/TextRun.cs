@@ -4,7 +4,7 @@ namespace ZeroDep.Content;
 internal sealed class TextRun
 {
     public TextRun(string text, double x, double y, double width, double fontSize, int renderMode,
-        int authoritativeChars, int fallbackChars, int unmappedChars)
+        int authoritativeChars, int fallbackChars, int unmappedChars, double spaceWidthEm)
     {
         Text = text;
         X = x;
@@ -15,6 +15,7 @@ internal sealed class TextRun
         AuthoritativeChars = authoritativeChars;
         FallbackChars = fallbackChars;
         UnmappedChars = unmappedChars;
+        SpaceWidthEm = spaceWidthEm;
     }
 
     /// <summary>The decoded text.</summary>
@@ -46,4 +47,7 @@ internal sealed class TextRun
 
     /// <summary>Glyphs with no usable mapping (emitted empty / non-printable).</summary>
     public int UnmappedChars { get; }
+
+    /// <summary>The font's space advance in em — for positional inter-word gap detection (ADR-0008).</summary>
+    public double SpaceWidthEm { get; }
 }

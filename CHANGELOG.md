@@ -4,6 +4,21 @@ All notable changes to **ZeroDep** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.1 — 2026-06-26
+
+### Fixed
+
+- **Inter-word spacing in extracted text.** Some PDFs encode an inter-word space positionally — by advancing
+  the pen past the previous glyph's width rather than emitting a space glyph. The plain-text join used a flat
+  `0.25 × FontSize` gap threshold, which is *wider* than many fonts' actual space advance, so those genuine
+  word breaks were dropped and words ran together (e.g. `proof GLOBUS` → `proofGLOBUS`). The threshold is now
+  measured against the **font's own space-advance width** (carried per run as `TextRunInfo.SpaceWidthEm`), so
+  one-space positional gaps are recovered while flush intra-word glyphs are never split. Validated against
+  `pdftotext` across a corpus sample: the affected document is corrected and word-level agreement is
+  unchanged elsewhere (no regressions, no spurious intra-word spaces). Characters and `/ToUnicode` decoding
+  are unchanged — this is a spacing fix only. New additive property `TextRunInfo.SpaceWidthEm` (JSON output
+  unchanged).
+
 ## 2.1.0 — 2026-06-26
 
 ### Added

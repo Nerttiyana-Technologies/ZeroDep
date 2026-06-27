@@ -71,7 +71,7 @@ internal sealed class ContentInterpreter
                 Matrix end = Matrix.Multiply(advancedText, ctm);
                 double width = Hypot(end.E - start.E, end.F - start.F);
                 double size = fontSize * Hypot(start.C, start.D);
-                result.TextRuns.Add(new TextRun(text, start.E, start.F, width, size, renderMode, auth, fallback, unmapped));
+                result.TextRuns.Add(new TextRun(text, start.E, start.F, width, size, renderMode, auth, fallback, unmapped, font?.SpaceWidthEm ?? 0.25));
             }
             textMatrix = advancedText;
         }
