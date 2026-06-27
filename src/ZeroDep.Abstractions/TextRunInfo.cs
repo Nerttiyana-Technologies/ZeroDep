@@ -44,4 +44,11 @@ public sealed class TextRunInfo
 
     /// <summary>Glyphs with no usable mapping (emitted empty / non-printable).</summary>
     public int UnmappedChars { get; init; }
+
+    /// <summary>
+    /// The font's space advance in em (1.0 = full em). Lets a run-joiner detect inter-word gaps encoded
+    /// positionally (no space glyph) by comparing the gap to the font's own space width (ADR-0008).
+    /// Defaults to 0.25 when unknown.
+    /// </summary>
+    public double SpaceWidthEm { get; init; } = 0.25;
 }
