@@ -1,4 +1,4 @@
-![ZeroDep — Zero External Dependencies. Pure PDF Processing.](https://raw.githubusercontent.com/Nerttiyana-Technologies/ZeroDep/main/assets/zerodep-header.png)
+![ZeroDep — Zero External Dependencies. Pure PDF Processing.](https://raw.githubusercontent.com/Nerttiyana-Technologies/ZeroDep/main/assets/header.png)
 
 **Zero External Dependencies. Pure PDF Processing.**
 
