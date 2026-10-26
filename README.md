@@ -11,8 +11,8 @@ A 100% dependency-free .NET engine for PDF structural analysis.
 
 ---
 
-ZeroDep reads PDF files directly from bytes using **only the .NET Base Class Library** — no iText, no
-Pdfium, no SkiaSharp, no native binaries, no transitive packages. It extracts the structure of a
+ZeroDep reads PDF files directly from bytes using **only the .NET Base Class Library** — no third-party
+PDF or graphics libraries, no native binaries, no transitive packages. It extracts the structure of a
 document — image resolution, text and OCR layers, interactive forms, encryption metadata — and emits
 a typed, versioned JSON graph. It is built for document-processing pipelines: ingestion, archive
 validation, compliance checks, and large-corpus analysis.
